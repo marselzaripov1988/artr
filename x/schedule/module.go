@@ -154,3 +154,9 @@ func (am AppModule) LegacyQuerierHandler(legacyQuerierCdc *codec.LegacyAmino) sd
 func (am AppModule) RegisterServices(cfg module.Configurator) {
 	types.RegisterQueryServer(cfg.QueryServer(), keeper.QueryServer(am.keeper))
 }
+
+// ConsensusVersion версия схемы состояния модуля. Требование SDK 0.43+:
+// менеджер модулей сравнивает её с записанной в сторе и по расхождению
+// запускает зарегистрированные миграции. Единица — исходная версия, с
+// которой модуль входит в новую схему.
+func (AppModule) ConsensusVersion() uint64 { return 1 }

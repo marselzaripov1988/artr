@@ -163,3 +163,9 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {}
 func (AppModule) EndBlock(_ sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
 	return []abci.ValidatorUpdate{}
 }
+
+// ConsensusVersion версия схемы состояния модуля. Требование SDK 0.43+:
+// менеджер модулей сравнивает её с записанной в сторе и по расхождению
+// запускает зарегистрированные миграции. Единица — исходная версия, с
+// которой модуль входит в новую схему.
+func (AppModule) ConsensusVersion() uint64 { return 1 }
