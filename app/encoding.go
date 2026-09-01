@@ -9,7 +9,7 @@ import (
 )
 
 type EncodingConfig struct {
-	Marshaler         codec.Marshaler
+	Marshaler         codec.Codec
 	InterfaceRegistry codecTypes.InterfaceRegistry
 	TxConfig          client.TxConfig
 	Amino             *codec.LegacyAmino

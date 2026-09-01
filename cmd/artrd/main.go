@@ -59,9 +59,14 @@ func main() {
 		Use:   "artrd",
 		Short: "Artery Blockchain node (server + client)",
 		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
-			clientCtx = client.ReadHomeFlag(clientCtx, cmd)
+			// SDK 0.43 убрал client.ReadHomeFlag: --home читается вместе с
+			// остальными постоянными флагами через ReadPersistentCommandFlags.
+			clientCtx, err := client.ReadPersistentCommandFlags(clientCtx, cmd.Flags())
+			if err != nil {
+				return err
+			}
 
-			clientCtx, err := config.ReadFromClientConfig(clientCtx)
+			clientCtx, err = config.ReadFromClientConfig(clientCtx)
 			if err != nil {
 				return err
 			}
@@ -70,7 +75,8 @@ func main() {
 				return err
 			}
 
-			return server.InterceptConfigsPreRunHandler(cmd)
+			// Пустые шаблон и конфиг означают значения по умолчанию.
+			return server.InterceptConfigsPreRunHandler(cmd, "", nil)
 		},
 	}
 
@@ -227,7 +233,7 @@ func cmdValidatorSet() *cobra.Command {
 			page, _ := cmd.Flags().GetInt(flags.FlagPage)
 			limit, _ := cmd.Flags().GetInt(flags.FlagLimit)
 
-			result, err := rpc.GetValidators(clientCtx, height, &page, &limit)
+			result, err := rpc.GetValidators(cmd.Context(), clientCtx, height, &page, &limit)
 			if err != nil {
 				return err
 			}
