@@ -13,7 +13,7 @@ import (
 
 // Keeper of the earning store
 type Keeper struct {
-	cdc            codec.BinaryMarshaler
+	cdc            codec.BinaryCodec
 	storeKey       sdk.StoreKey
 	paramspace     types.ParamSubspace
 	accountKeeper  types.AccountKeeper
@@ -23,7 +23,7 @@ type Keeper struct {
 
 // NewKeeper creates a earning keeper
 func NewKeeper(
-	cdc codec.BinaryMarshaler,
+	cdc codec.BinaryCodec,
 	key sdk.StoreKey,
 	paramspace types.ParamSubspace,
 	accountKeeper types.AccountKeeper,
@@ -95,7 +95,7 @@ func (k Keeper) has(ctx sdk.Context, key sdk.AccAddress) bool {
 func (k Keeper) get(ctx sdk.Context, key sdk.AccAddress) (*types.Timestamps, error) {
 	store := ctx.KVStore(k.storeKey)
 	var item types.Timestamps
-	err := k.cdc.UnmarshalBinaryBare(store.Get([]byte(key)), &item)
+	err := k.cdc.Unmarshal(store.Get([]byte(key)), &item)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +104,7 @@ func (k Keeper) get(ctx sdk.Context, key sdk.AccAddress) (*types.Timestamps, err
 
 func (k Keeper) set(ctx sdk.Context, key sdk.AccAddress, value types.Timestamps) error {
 	store := ctx.KVStore(k.storeKey)
-	bz, err := k.cdc.MarshalBinaryBare(&value)
+	bz, err := k.cdc.Marshal(&value)
 	if err != nil {
 		return err
 	}

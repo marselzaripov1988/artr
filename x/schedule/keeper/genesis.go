@@ -22,7 +22,7 @@ func (k Keeper) ExportGenesis(ctx sdk.Context) (types.Params, []types.Task) {
 	defer it.Close()
 	for ; it.Valid(); it.Next() {
 		var schedule types.Schedule
-		k.cdc.MustUnmarshalBinaryBare(it.Value(), &schedule)
+		k.cdc.MustUnmarshal(it.Value(), &schedule)
 		tasks = append(tasks, schedule.Tasks...)
 	}
 	return params, tasks

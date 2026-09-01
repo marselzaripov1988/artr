@@ -105,7 +105,7 @@ func (s QueryServer) List(ctx context.Context, req *types.ListRequest) (resp *ty
 		current++
 		acc := sdk.AccAddress(iterator.Key())
 		var timestamps types.Timestamps
-		err = k.cdc.UnmarshalBinaryBare(iterator.Value(), &timestamps)
+		err = k.cdc.Unmarshal(iterator.Value(), &timestamps)
 		if err != nil {
 			return nil, status.Errorf(codes.Internal, "cannot obtain earner timestamps by account address: %s", acc.String())
 		}

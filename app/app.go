@@ -544,7 +544,7 @@ func (app *ArteryApp) RegisterInterfaces(registry codecTypes.InterfaceRegistry) 
 type GenesisState map[string]json.RawMessage
 
 // NewDefaultGenesisState generates the default state for the application.
-func NewDefaultGenesisState(mrshl codec.JSONMarshaler) GenesisState {
+func NewDefaultGenesisState(mrshl codec.JSONCodec) GenesisState {
 	return ModuleBasics.DefaultGenesis(mrshl)
 }
 
@@ -575,7 +575,7 @@ func (app *ArteryApp) LoadHeight(height int64) error {
 }
 
 // Codec returns the application's sealed codec.
-func (app *ArteryApp) Codec() codec.BinaryMarshaler {
+func (app *ArteryApp) Codec() codec.BinaryCodec {
 	return app.ec.Marshaler
 }
 

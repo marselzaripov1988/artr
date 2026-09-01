@@ -99,7 +99,7 @@ func (s GenSuite) checkExportImport() {
 
 func (s *GenSuite) RDecoder(bz []byte) (string, error) {
 	var item types.Info
-	err := s.app.Codec().UnmarshalBinaryBare(bz, &item)
+	err := s.app.Codec().Unmarshal(bz, &item)
 	if err != nil {
 		return "", err
 	}

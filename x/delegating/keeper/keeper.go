@@ -19,7 +19,7 @@ import (
 // Keeper of the delegating store
 type Keeper struct {
 	mainStoreKey   sdk.StoreKey
-	cdc            codec.BinaryMarshaler
+	cdc            codec.BinaryCodec
 	paramspace     types.ParamSubspace
 	accKeeper      types.AccountKeeper
 	bankKeeper     types.BankKeeper
@@ -32,7 +32,7 @@ type Keeper struct {
 
 // NewKeeper creates a delegating keeper
 func NewKeeper(
-	cdc codec.BinaryMarshaler, mainKey sdk.StoreKey, paramspace types.ParamSubspace,
+	cdc codec.BinaryCodec, mainKey sdk.StoreKey, paramspace types.ParamSubspace,
 	accountKeeper types.AccountKeeper, scheduleKeeper types.ScheduleKeeper, profileKeeper types.ProfileKeeper,
 	bankKeeper types.BankKeeper, refKeeper types.ReferralKeeper,
 ) *Keeper {
@@ -84,7 +84,7 @@ func (k Keeper) Revoke(ctx sdk.Context, acc sdk.AccAddress, uartrs sdk.Int, expr
 
 	if store.Has(byteKey) {
 		byteItem = store.Get(byteKey)
-		k.cdc.MustUnmarshalBinaryBare(byteItem, &item)
+		k.cdc.MustUnmarshal(byteItem, &item)
 	} else {
 		item = types.NewRecord()
 	}
@@ -115,7 +115,7 @@ func (k Keeper) Revoke(ctx sdk.Context, acc sdk.AccAddress, uartrs sdk.Int, expr
 		Time:   time,
 		Amount: uartrrs,
 	})
-	store.Set(byteKey, k.cdc.MustMarshalBinaryBare(&item))
+	store.Set(byteKey, k.cdc.MustMarshal(&item))
 	k.scheduleKeeper.ScheduleTask(ctx, time, types.RevokeHookName, byteKey)
 	return nil
 }
@@ -143,7 +143,7 @@ func (k Keeper) Delegate(ctx sdk.Context, acc sdk.AccAddress, uartrs sdk.Int) er
 
 	if store.Has(byteKey) {
 		byteItem = store.Get(byteKey)
-		k.cdc.MustUnmarshalBinaryBare(byteItem, &item)
+		k.cdc.MustUnmarshal(byteItem, &item)
 	} else {
 		item = types.NewRecord()
 	}
@@ -168,7 +168,7 @@ func (k Keeper) Delegate(ctx sdk.Context, acc sdk.AccAddress, uartrs sdk.Int) er
 		Ucoins:           uartrs.Uint64(),
 	})
 
-	bz := k.cdc.MustMarshalBinaryBare(&item)
+	bz := k.cdc.MustMarshal(&item)
 	store.Set(byteKey, bz)
 
 	return nil
@@ -193,7 +193,7 @@ func (k Keeper) Get(ctx sdk.Context, acc sdk.AccAddress) *types.Record {
 	if !store.Has(byteKey) {
 		return nil
 	}
-	k.cdc.MustUnmarshalBinaryBare(store.Get(byteKey), &data)
+	k.cdc.MustUnmarshal(store.Get(byteKey), &data)
 
 	return &data
 }
@@ -209,7 +209,7 @@ func (k Keeper) GetAccumulation(ctx sdk.Context, acc sdk.AccAddress) (*types.Acc
 	if !store.Has(byteKey) {
 		return nil, types.ErrNothingDelegated
 	}
-	k.cdc.MustUnmarshalBinaryBare(store.Get(byteKey), &item)
+	k.cdc.MustUnmarshal(store.Get(byteKey), &item)
 	if item.NextAccrue == nil {
 		return nil, types.ErrNothingDelegated
 	}

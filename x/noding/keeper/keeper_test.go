@@ -35,7 +35,7 @@ type BaseSuite struct {
 	app     *app.ArteryApp
 	cleanup func()
 
-	cdc codec.BinaryMarshaler
+	cdc codec.BinaryCodec
 	ctx sdk.Context
 	k   noding.Keeper
 	bk  bank.Keeper

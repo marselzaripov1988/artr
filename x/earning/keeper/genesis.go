@@ -14,7 +14,7 @@ func (k Keeper) GetEarners(ctx sdk.Context) []types.Earner {
 	for ; it.Valid(); it.Next() {
 		acc := sdk.AccAddress(it.Key())
 		var timestamps types.Timestamps
-		err := k.cdc.UnmarshalBinaryBare(it.Value(), &timestamps)
+		err := k.cdc.Unmarshal(it.Value(), &timestamps)
 		if err != nil {
 			panic(err)
 		}
@@ -27,7 +27,7 @@ func (k Keeper) SetEarners(ctx sdk.Context, earners []types.Earner) {
 	store := ctx.KVStore(k.storeKey)
 	for _, earner := range earners {
 		timestamps := earner.GetTimestamps()
-		bz, err := k.cdc.MarshalBinaryBare(&timestamps)
+		bz, err := k.cdc.Marshal(&timestamps)
 		if err != nil {
 			panic(err)
 		}

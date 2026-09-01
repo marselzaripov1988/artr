@@ -19,7 +19,7 @@ import (
 
 // Keeper of the profile store
 type Keeper struct {
-	cdc            codec.BinaryMarshaler
+	cdc            codec.BinaryCodec
 	storeKey       sdk.StoreKey
 	aliasStoreKey  sdk.StoreKey
 	cardsStoreKey  sdk.StoreKey
@@ -32,7 +32,7 @@ type Keeper struct {
 
 // NewKeeper creates a profile keeper
 func NewKeeper(
-	cdc codec.BinaryMarshaler,
+	cdc codec.BinaryCodec,
 	key sdk.StoreKey,
 	aliasKey sdk.StoreKey,
 	cardsKey sdk.StoreKey,
@@ -72,7 +72,7 @@ func (k Keeper) GetProfile(ctx sdk.Context, addr sdk.AccAddress) *types.Profile 
 		return nil
 	}
 
-	err := k.cdc.UnmarshalBinaryBare(bz, &item)
+	err := k.cdc.Unmarshal(bz, &item)
 	if err != nil {
 		panic(err)
 	}
@@ -170,7 +170,7 @@ func (k Keeper) SetProfile(ctx sdk.Context, addr sdk.AccAddress, profile types.P
 	}
 
 	store := ctx.KVStore(k.storeKey)
-	bz, err := k.cdc.MarshalBinaryBare(&profile)
+	bz, err := k.cdc.Marshal(&profile)
 	if err != nil {
 		panic(err)
 	}
@@ -236,7 +236,7 @@ func (k Keeper) SetStorageCurrent(ctx sdk.Context, addr sdk.AccAddress, value ui
 	profile.StorageCurrent = value
 
 	store := ctx.KVStore(k.storeKey)
-	bz, err := k.cdc.MarshalBinaryBare(profile)
+	bz, err := k.cdc.Marshal(profile)
 	if err != nil {
 		panic(err)
 	}
@@ -253,7 +253,7 @@ func (k Keeper) SetVpnCurrent(ctx sdk.Context, addr sdk.AccAddress, value uint64
 	profile.VpnCurrent = value
 
 	store := ctx.KVStore(k.storeKey)
-	bz, err := k.cdc.MarshalBinaryBare(profile)
+	bz, err := k.cdc.Marshal(profile)
 	if err != nil {
 		panic(err)
 	}

@@ -72,7 +72,7 @@ func newBunchUpdater(k Keeper, ctx sdk.Context) *bunchUpdater {
 
 func (bu *bunchUpdater) set(acc string, value types.Info) error {
 	keyBytes := []byte(acc)
-	valueBytes, err := bu.k.cdc.MarshalBinaryBare(&value)
+	valueBytes, err := bu.k.cdc.Marshal(&value)
 	if err != nil {
 		return err
 	}
@@ -107,7 +107,7 @@ func (bu *bunchUpdater) get(acc string) (types.Info, error) {
 		store := bu.ctx.KVStore(bu.k.storeKey)
 		valueBytes = store.Get(keyBytes)
 	}
-	err := bu.k.cdc.UnmarshalBinaryBare(valueBytes, &value)
+	err := bu.k.cdc.Unmarshal(valueBytes, &value)
 	return value, err
 }
 

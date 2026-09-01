@@ -21,13 +21,13 @@ import (
 // Keeper of the schedule store
 type Keeper struct {
 	storeKey   sdk.StoreKey
-	cdc        codec.BinaryMarshaler
+	cdc        codec.BinaryCodec
 	eventHooks map[string]func(ctx sdk.Context, data []byte, time time.Time)
 	paramspace paramtypes.Subspace
 }
 
 // NewKeeper creates a schedule keeper
-func NewKeeper(cdc codec.BinaryMarshaler, key sdk.StoreKey, paramspace paramtypes.Subspace) Keeper {
+func NewKeeper(cdc codec.BinaryCodec, key sdk.StoreKey, paramspace paramtypes.Subspace) Keeper {
 	keeper := Keeper{
 		storeKey:   key,
 		cdc:        cdc,
@@ -59,7 +59,7 @@ func (k Keeper) GetTasks(ctx sdk.Context, since, to time.Time) []types.Task {
 
 	for ; it.Valid(); it.Next() {
 		var sch types.Schedule
-		k.cdc.MustUnmarshalBinaryBare(it.Value(), &sch)
+		k.cdc.MustUnmarshal(it.Value(), &sch)
 		items = append(items, sch.Tasks...)
 	}
 	return items
@@ -76,12 +76,12 @@ func (k Keeper) scheduleTask(ctx sdk.Context, task types.Task) {
 		sch   types.Schedule
 	)
 	if bz := store.Get(key); bz != nil {
-		k.cdc.MustUnmarshalBinaryBare(bz, &sch)
+		k.cdc.MustUnmarshal(bz, &sch)
 	}
 
 	sch.Tasks = append(sch.Tasks, task)
 
-	store.Set(key, k.cdc.MustMarshalBinaryBare(&sch))
+	store.Set(key, k.cdc.MustMarshal(&sch))
 }
 
 func (k Keeper) DeleteAll(ctx sdk.Context, time time.Time, event string) {
@@ -104,7 +104,7 @@ func (k Keeper) delete(ctx sdk.Context, time time.Time, predicate func(types.Tas
 	}
 
 	var items types.Schedule
-	k.cdc.MustUnmarshalBinaryBare(bz, &items)
+	k.cdc.MustUnmarshal(bz, &items)
 
 	filtered := make([]types.Task, 0, len(items.Tasks))
 	for _, item := range items.Tasks {
@@ -116,7 +116,7 @@ func (k Keeper) delete(ctx sdk.Context, time time.Time, predicate func(types.Tas
 	if len(filtered) == 0 {
 		store.Delete(key)
 	} else {
-		store.Set(key, k.cdc.MustMarshalBinaryBare(&types.Schedule{Tasks: filtered}))
+		store.Set(key, k.cdc.MustMarshal(&types.Schedule{Tasks: filtered}))
 	}
 }
 
@@ -129,7 +129,7 @@ func (k Keeper) PerformSchedule(ctx sdk.Context) {
 
 	for ; it.Valid(); it.Next() {
 		var sch types.Schedule
-		k.cdc.MustUnmarshalBinaryBare(it.Value(), &sch)
+		k.cdc.MustUnmarshal(it.Value(), &sch)
 		for _, task := range sch.Tasks {
 			hook := k.eventHooks[task.HandlerName]
 			if hook != nil {

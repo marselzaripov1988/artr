@@ -19,7 +19,7 @@ func (k Keeper) ExportProfileRecords(ctx sdk.Context) []types.GenesisProfile {
 	for ; it.Valid(); it.Next() {
 		acc := sdk.AccAddress(it.Key())
 		var value types.Profile
-		if err := k.cdc.UnmarshalBinaryBare(it.Value(), &value); err != nil {
+		if err := k.cdc.Unmarshal(it.Value(), &value); err != nil {
 			panic(err)
 		}
 		value.CardNumber = 0
@@ -45,7 +45,7 @@ func (k Keeper) ImportProfileRecords(ctx sdk.Context, data []types.GenesisProfil
 		k.setProfileAccountByCardNumber(ctx, record.Profile.CardNumber, addr)
 
 		store := ctx.KVStore(k.storeKey)
-		bz, err := k.cdc.MarshalBinaryBare(&record.Profile)
+		bz, err := k.cdc.Marshal(&record.Profile)
 		if err != nil {
 			panic(err)
 		}

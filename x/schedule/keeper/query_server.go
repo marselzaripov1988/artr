@@ -38,7 +38,7 @@ func (qs QueryServer) All(ctx context.Context, req *types.AllRequest) (resp *typ
 	resp = &types.AllResponse{}
 	for ; it.Valid(); it.Next() {
 		var sch types.Schedule
-		k.cdc.MustUnmarshalBinaryBare(it.Value(), &sch)
+		k.cdc.MustUnmarshal(it.Value(), &sch)
 		resp.Tasks = append(resp.Tasks, sch.Tasks...)
 	}
 	return

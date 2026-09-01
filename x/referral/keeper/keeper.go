@@ -24,7 +24,7 @@ const (
 
 // Keeper of the referral store
 type Keeper struct {
-	cdc            codec.BinaryMarshaler
+	cdc            codec.BinaryCodec
 	storeKey       sdk.StoreKey
 	indexStoreKey  sdk.StoreKey
 	paramspace     types.ParamSubspace
@@ -38,7 +38,7 @@ type Keeper struct {
 
 // NewKeeper creates a referral keeper
 func NewKeeper(
-	cdc codec.BinaryMarshaler, key sdk.StoreKey, idxKey sdk.StoreKey, paramspace types.ParamSubspace,
+	cdc codec.BinaryCodec, key sdk.StoreKey, idxKey sdk.StoreKey, paramspace types.ParamSubspace,
 	accKeeper types.AccountKeeper, scheduleKeeper types.ScheduleKeeper, bankKeeper types.BankKeeper,
 	supplyKeeper types.SupplyKeeper,
 ) *Keeper {
@@ -188,7 +188,7 @@ func (k Keeper) GetTopLevelAndBanishedAccounts(ctx sdk.Context) (topLevel []stri
 	for ; itr.Valid(); itr.Next() {
 		v := itr.Value()
 		var record types.Info
-		err = k.cdc.UnmarshalBinaryBare(v, &record)
+		err = k.cdc.Unmarshal(v, &record)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -666,7 +666,7 @@ func (k Keeper) Iterate(ctx sdk.Context, callback func(acc string, r *types.Info
 	for ; it.Valid(); it.Next() {
 		var acc = string(it.Key())
 		var item types.Info
-		if err := k.cdc.UnmarshalBinaryBare(it.Value(), &item); err != nil {
+		if err := k.cdc.Unmarshal(it.Value(), &item); err != nil {
 			panic(errors.Wrapf(err, `cannot unmarshal info for "%s"`, acc))
 		}
 		if changed, checkForStatusUpdate := callback(acc, &item); changed || checkForStatusUpdate {
@@ -1081,7 +1081,7 @@ func (k Keeper) Get(ctx sdk.Context, acc string) (types.Info, error) {
 	store := ctx.KVStore(k.storeKey)
 	var item types.Info
 	err := errors.Wrapf(
-		k.cdc.UnmarshalBinaryBare(store.Get([]byte(acc)), &item),
+		k.cdc.Unmarshal(store.Get([]byte(acc)), &item),
 		"no data for %s", acc,
 	)
 	return item, err
@@ -1150,7 +1150,7 @@ func (k Keeper) getReferralValidatorFeesCore(ctx sdk.Context, acc string, toVali
 func (k Keeper) set(ctx sdk.Context, acc string, value types.Info) error {
 	store := ctx.KVStore(k.storeKey)
 	keyBytes := []byte(acc)
-	valueBytes, err := k.cdc.MarshalBinaryBare(&value)
+	valueBytes, err := k.cdc.Marshal(&value)
 	if err != nil {
 		return err
 	}
@@ -1163,12 +1163,12 @@ func (k Keeper) update(ctx sdk.Context, acc string, callback func(value types.In
 	store := ctx.KVStore(k.storeKey)
 	keyBytes := []byte(acc)
 	var value types.Info
-	err := k.cdc.UnmarshalBinaryBare(store.Get(keyBytes), &value)
+	err := k.cdc.Unmarshal(store.Get(keyBytes), &value)
 	if err != nil {
 		return err
 	}
 	value = callback(value)
-	valueBytes, err := k.cdc.MarshalBinaryBare(&value)
+	valueBytes, err := k.cdc.Marshal(&value)
 	if err != nil {
 		return err
 	}

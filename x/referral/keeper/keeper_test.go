@@ -43,7 +43,7 @@ type BaseSuite struct {
 	app     *app.ArteryApp
 	cleanup func()
 
-	cdc      codec.BinaryMarshaler
+	cdc      codec.BinaryCodec
 	ctx      sdk.Context
 	k        referral.Keeper
 	ak       authK.AccountKeeper
@@ -1559,14 +1559,14 @@ func (s *BaseSuite) get(acc string) (types.Info, error) {
 	keyBytes := []byte(acc)
 	valueBytes := store.Get(keyBytes)
 	var value types.Info
-	err := s.cdc.UnmarshalBinaryBare(valueBytes, &value)
+	err := s.cdc.Unmarshal(valueBytes, &value)
 	return value, err
 }
 
 func (s *BaseSuite) set(acc string, value types.Info) error {
 	store := s.ctx.KVStore(s.storeKey)
 	keyBytes := []byte(acc)
-	valueBytes, err := s.cdc.MarshalBinaryBare(&value)
+	valueBytes, err := s.cdc.Marshal(&value)
 	if err != nil {
 		return err
 	}
@@ -1579,12 +1579,12 @@ func (s *BaseSuite) update(acc string, callback func(*types.Info)) error {
 	keyBytes := []byte(acc)
 	valueBytes := store.Get(keyBytes)
 	var value types.Info
-	err := s.cdc.UnmarshalBinaryBare(valueBytes, &value)
+	err := s.cdc.Unmarshal(valueBytes, &value)
 	if err != nil {
 		return errors.Wrap(err, "cannot unmarshal value")
 	}
 	callback(&value)
-	valueBytes, err = s.cdc.MarshalBinaryBare(&value)
+	valueBytes, err = s.cdc.Marshal(&value)
 	if err != nil {
 		return errors.Wrap(err, "cannot marshal value")
 	}

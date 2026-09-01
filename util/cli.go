@@ -71,7 +71,7 @@ func AddTxFlagsToCmd(cmd *cobra.Command) {
 	cmd.Flags().String(flags.FlagFrom, "", "Name or address of private key with which to sign")
 	cmd.Flags().Uint64P(flags.FlagAccountNumber, "a", 0, "The account number of the signing account (offline mode only)")
 	cmd.Flags().Uint64P(flags.FlagSequence, "s", 0, "The sequence number of the signing account (offline mode only)")
-	cmd.Flags().String(flags.FlagMemo, "", "Memo to send along with transaction")
+	cmd.Flags().String(flags.FlagNote, "", "Memo to send along with transaction")
 	cmd.Flags().String(flags.FlagFees, "", "Fees to pay along with transaction; eg: 10uatom")
 	cmd.Flags().String(flags.FlagGasPrices, "", "Gas prices in decimal format to determine the transaction fee (e.g. 0.1uatom)")
 	cmd.Flags().String(flags.FlagNode, "", "<host>:<port> to tendermint rpc interface for this chain")

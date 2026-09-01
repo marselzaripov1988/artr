@@ -32,7 +32,7 @@ func (k Keeper) performRevoking(ctx sdk.Context, acc sdk.AccAddress) error {
 		return nil
 	}
 	byteItem = mainStore.Get(byteKey)
-	k.cdc.MustUnmarshalBinaryBare(byteItem, &item)
+	k.cdc.MustUnmarshal(byteItem, &item)
 	sort.Slice(item.Requests, func(i, j int) bool {
 		return item.Requests[i].Time.Before(item.Requests[j].Time)
 	})
@@ -55,7 +55,7 @@ func (k Keeper) performRevoking(ctx sdk.Context, acc sdk.AccAddress) error {
 	if item.IsEmpty() {
 		mainStore.Delete(byteKey)
 	} else {
-		bz := k.cdc.MustMarshalBinaryBare(&item)
+		bz := k.cdc.MustMarshal(&item)
 		mainStore.Set(byteKey, bz)
 	}
 	return nil
@@ -68,7 +68,7 @@ func (k Keeper) MustPerformAccrue(ctx sdk.Context, payload []byte, time time.Tim
 		data  types.Record
 	)
 
-	k.cdc.MustUnmarshalBinaryBare(store.Get(acc), &data)
+	k.cdc.MustUnmarshal(store.Get(acc), &data)
 	if data.NextAccrue == nil {
 		panic(errors.New("accrue cancelled"))
 	} else if *data.NextAccrue != time {
@@ -102,7 +102,7 @@ func (k Keeper) MustPerformAccrue(ctx sdk.Context, payload []byte, time time.Tim
 		*data.NextAccrue = time.Add(k.scheduleKeeper.OneDay(ctx))
 		k.scheduleKeeper.ScheduleTask(ctx, *data.NextAccrue, types.AccrueHookName, acc)
 	}
-	store.Set(acc, k.cdc.MustMarshalBinaryBare(&data))
+	store.Set(acc, k.cdc.MustMarshal(&data))
 }
 
 func (k Keeper) OnBanished(ctx sdk.Context, acc sdk.AccAddress) error {

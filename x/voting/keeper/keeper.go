@@ -25,7 +25,7 @@ import (
 // Keeper of the voting store
 type Keeper struct {
 	storeKey         sdk.StoreKey
-	cdc              codec.BinaryMarshaler
+	cdc              codec.BinaryCodec
 	paramspace       types.ParamSubspace
 	scheduleKeeper   types.ScheduleKeeper
 	upgradeKeeper    types.UprgadeKeeper
@@ -39,7 +39,7 @@ type Keeper struct {
 
 // NewKeeper creates a voting keeper
 func NewKeeper(
-	cdc codec.BinaryMarshaler, key sdk.StoreKey, paramspace types.ParamSubspace,
+	cdc codec.BinaryCodec, key sdk.StoreKey, paramspace types.ParamSubspace,
 	scheduleKeeper types.ScheduleKeeper,
 	upgradeKeeper types.UprgadeKeeper,
 	nodingKeeper types.NodingKeeper,
@@ -525,7 +525,7 @@ func (k Keeper) GetCurrentPoll(ctx sdk.Context) (poll types.Poll, ok bool) {
 		return types.Poll{}, false
 	}
 
-	k.cdc.MustUnmarshalBinaryBare(bz, &poll)
+	k.cdc.MustUnmarshal(bz, &poll)
 	return poll, true
 }
 
@@ -556,7 +556,7 @@ func (k Keeper) StartPoll(ctx sdk.Context, poll types.Poll) error {
 	poll.StartTime = &start
 	poll.EndTime = &end
 
-	store.Set(types.KeyPollCurrent, k.cdc.MustMarshalBinaryBare(&poll))
+	store.Set(types.KeyPollCurrent, k.cdc.MustMarshal(&poll))
 	return nil
 }
 
@@ -633,7 +633,7 @@ func (k Keeper) EndPoll(ctx sdk.Context) {
 		decision types.Decision
 	)
 	if bz := store.Get(types.KeyPollCurrent); bz != nil {
-		k.cdc.MustUnmarshalBinaryBare(bz, &poll)
+		k.cdc.MustUnmarshal(bz, &poll)
 	} else {
 		panic(types.ErrNoActivePoll)
 	}
@@ -663,7 +663,7 @@ func (k Keeper) EndPoll(ctx sdk.Context) {
 	historyKey := make([]byte, len(types.KeyPollHistory)+8)
 	copy(historyKey, types.KeyPollHistory)
 	binary.BigEndian.PutUint64(historyKey[len(types.KeyPollHistory):], uint64(poll.EndTime.Unix()))
-	store.Set(historyKey, k.cdc.MustMarshalBinaryBare(&types.PollHistoryItem{
+	store.Set(historyKey, k.cdc.MustMarshal(&types.PollHistoryItem{
 		Poll:     poll,
 		Yes:      yes,
 		No:       no,
@@ -699,7 +699,7 @@ func (k Keeper) GetPollHistory(ctx sdk.Context, limit int32, page int32) []types
 	}
 	for ; it.Valid(); it.Next() {
 		var item types.PollHistoryItem
-		k.cdc.MustUnmarshalBinaryBare(it.Value(), &item)
+		k.cdc.MustUnmarshal(it.Value(), &item)
 		res = append(res, item)
 	}
 	it.Close()
@@ -738,7 +738,7 @@ func (k Keeper) LoadPolls(ctx sdk.Context, state types.GenesisState) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPollPrefix)
 
 	if state.CurrentPoll != nil {
-		store.Set(types.KeyPollCurrent, k.cdc.MustMarshalBinaryBare(state.CurrentPoll))
+		store.Set(types.KeyPollCurrent, k.cdc.MustMarshal(state.CurrentPoll))
 		for _, ans := range state.PollAnswers {
 			if err := k.Answer(ctx, ans.Acc, ans.Ans); err != nil {
 				panic(err)
@@ -750,6 +750,6 @@ func (k Keeper) LoadPolls(ctx sdk.Context, state types.GenesisState) {
 	copy(key, types.KeyPollHistory)
 	for _, item := range state.PollHistory {
 		binary.BigEndian.PutUint64(key[len(types.KeyPollHistory):], uint64(item.Poll.EndTime.Unix()))
-		store.Set(key, k.cdc.MustMarshalBinaryBare(&item))
+		store.Set(key, k.cdc.MustMarshal(&item))
 	}
 }

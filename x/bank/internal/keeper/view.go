@@ -31,13 +31,13 @@ type ViewKeeper interface {
 
 // BaseViewKeeper implements a read only keeper implementation of ViewKeeper.
 type BaseViewKeeper struct {
-	cdc      codec.BinaryMarshaler
+	cdc      codec.BinaryCodec
 	storeKey sdk.StoreKey
 	ak       types.AccountKeeper
 }
 
 // NewBaseViewKeeper returns a new BaseViewKeeper.
-func NewBaseViewKeeper(cdc codec.BinaryMarshaler, storeKey sdk.StoreKey, ak types.AccountKeeper) BaseViewKeeper {
+func NewBaseViewKeeper(cdc codec.BinaryCodec, storeKey sdk.StoreKey, ak types.AccountKeeper) BaseViewKeeper {
 	return BaseViewKeeper{
 		cdc:      cdc,
 		storeKey: storeKey,
@@ -68,7 +68,7 @@ func (k BaseViewKeeper) GetBalance(ctx sdk.Context, addr sdk.AccAddress) sdk.Coi
 	}
 
 	var balance types.Balance
-	if err := k.cdc.UnmarshalBinaryBare(bz, &balance); err != nil {
+	if err := k.cdc.Unmarshal(bz, &balance); err != nil {
 		panic(errors.Wrap(err, "cannot unmarshal value"))
 	}
 	return sdk.NewCoins(balance.Coins...)
@@ -103,7 +103,7 @@ func (k BaseViewKeeper) IterateAllBalances(ctx sdk.Context, cb func(sdk.AccAddre
 		address := types.AddressFromBalancesStore(iterator.Key())
 
 		var balance types.Balance
-		k.cdc.MustUnmarshalBinaryBare(iterator.Value(), &balance)
+		k.cdc.MustUnmarshal(iterator.Value(), &balance)
 
 		if cb(address, balance.Coins) {
 			break

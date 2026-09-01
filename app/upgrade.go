@@ -87,7 +87,7 @@ func RecalculateActiveReferrals(k referralK.Keeper) upgrade.UpgradeHandler {
 	}
 }
 
-func ScheduleBanishment(rk referralK.Keeper, bk bank.Keeper, rKey, sKey sdk.StoreKey, cdc codec.BinaryMarshaler) upgrade.UpgradeHandler {
+func ScheduleBanishment(rk referralK.Keeper, bk bank.Keeper, rKey, sKey sdk.StoreKey, cdc codec.BinaryCodec) upgrade.UpgradeHandler {
 	return func(ctx sdk.Context, plan upgrade.Plan) {
 		logger := ctx.Logger().With("module", "x/upgrade")
 		logger.Info("Starting ScheduleBanishment ...")
@@ -107,7 +107,7 @@ func ScheduleBanishment(rk referralK.Keeper, bk bank.Keeper, rKey, sKey sdk.Stor
 			logger.Info("... fixing schedule ...")
 			for ; sIt.Valid(); sIt.Next() {
 				var sch scheduleT.Schedule
-				cdc.MustUnmarshalBinaryBare(sIt.Value(), &sch)
+				cdc.MustUnmarshal(sIt.Value(), &sch)
 
 				changed := false
 				tasks := make([]scheduleT.Task, 0, len(sch.Tasks))
@@ -145,7 +145,7 @@ func ScheduleBanishment(rk referralK.Keeper, bk bank.Keeper, rKey, sKey sdk.Stor
 						}
 
 						var r referralT.Info
-						cdc.MustUnmarshalBinaryBare(rStore.Get(task.Data), &r)
+						cdc.MustUnmarshal(rStore.Get(task.Data), &r)
 						var wrong = r.Active || r.Banished
 						if r.CompressionAt != nil && r.CompressionAt.After(ctx.BlockTime()) {
 							var found bool
@@ -154,7 +154,7 @@ func ScheduleBanishment(rk referralK.Keeper, bk bank.Keeper, rKey, sKey sdk.Stor
 							key := make([]byte, 8)
 							binary.BigEndian.PutUint64(key, uint64(r.CompressionAt.UnixNano()))
 							if schBz := sStore.Get(key); schBz != nil {
-								cdc.MustUnmarshalBinaryBare(schBz, &sch)
+								cdc.MustUnmarshal(schBz, &sch)
 								for _, t := range sch.Tasks {
 									if t.HandlerName == referralK.CompressionHookName && string(t.Data) == addr.String() {
 										found = true
@@ -171,7 +171,7 @@ func ScheduleBanishment(rk referralK.Keeper, bk bank.Keeper, rKey, sKey sdk.Stor
 									"was", r.CompressionAt.String(),
 								)
 								r.CompressionAt = nil
-								rStore.Set(task.Data, cdc.MustMarshalBinaryBare(&r))
+								rStore.Set(task.Data, cdc.MustMarshal(&r))
 							}
 						}
 						wrong = wrong || len(r.Delegated) > 0 && r.Delegated[0].Int64() > dd
@@ -187,7 +187,7 @@ func ScheduleBanishment(rk referralK.Keeper, bk bank.Keeper, rKey, sKey sdk.Stor
 									"was", r.BanishmentAt.String(),
 								)
 								r.BanishmentAt = nil
-								rStore.Set(task.Data, cdc.MustMarshalBinaryBare(&r))
+								rStore.Set(task.Data, cdc.MustMarshal(&r))
 							}
 							changed = true
 							continue TasksForAMomentInTime
@@ -198,7 +198,7 @@ func ScheduleBanishment(rk referralK.Keeper, bk bank.Keeper, rKey, sKey sdk.Stor
 									"val", task.Time.String(),
 								)
 								r.BanishmentAt = &task.Time
-								rStore.Set(task.Data, cdc.MustMarshalBinaryBare(&r))
+								rStore.Set(task.Data, cdc.MustMarshal(&r))
 							} else if !r.BanishmentAt.Equal(task.Time) {
 								logger.Debug("... ... fixing     BanishmentAt ",
 									"acc", addr.String(),
@@ -206,7 +206,7 @@ func ScheduleBanishment(rk referralK.Keeper, bk bank.Keeper, rKey, sKey sdk.Stor
 									"to", task.Time.String(),
 								)
 								r.BanishmentAt = &task.Time
-								rStore.Set(task.Data, cdc.MustMarshalBinaryBare(&r))
+								rStore.Set(task.Data, cdc.MustMarshal(&r))
 							}
 						}
 					}
@@ -218,7 +218,7 @@ func ScheduleBanishment(rk referralK.Keeper, bk bank.Keeper, rKey, sKey sdk.Stor
 						sStore.Delete(sIt.Key())
 					} else {
 						sch.Tasks = tasks
-						sStore.Set(sIt.Key(), cdc.MustMarshalBinaryBare(&sch))
+						sStore.Set(sIt.Key(), cdc.MustMarshal(&sch))
 					}
 				}
 			}
@@ -237,7 +237,7 @@ func ScheduleBanishment(rk referralK.Keeper, bk bank.Keeper, rKey, sKey sdk.Stor
 				}
 
 				var r referralT.Info
-				cdc.MustUnmarshalBinaryBare(rIt.Value(), &r)
+				cdc.MustUnmarshal(rIt.Value(), &r)
 				if r.Banished && r.Active {
 					logger.Info("... ... banished yet active, restoring",
 						"acc", acc,
@@ -294,7 +294,7 @@ func ForceOnStatusChangedCallback(k noding.Keeper) upgrade.UpgradeHandler {
 	}
 }
 
-func ForceGlobalDelegation(rk referralK.Keeper, bk bank.Keeper, dk delegatingK.Keeper, sk scheduleK.Keeper, bKey, dKey sdk.StoreKey, cdc codec.BinaryMarshaler) upgrade.UpgradeHandler {
+func ForceGlobalDelegation(rk referralK.Keeper, bk bank.Keeper, dk delegatingK.Keeper, sk scheduleK.Keeper, bKey, dKey sdk.StoreKey, cdc codec.BinaryCodec) upgrade.UpgradeHandler {
 	return func(ctx sdk.Context, plan upgrade.Plan) {
 		logger := ctx.Logger().With("module", "x/upgrade")
 		logger.Info("Starting ForceGlobalDelegation ...")
@@ -389,12 +389,12 @@ func ForceGlobalDelegation(rk referralK.Keeper, bk bank.Keeper, dk delegatingK.K
 				if di.IsEmpty() {
 					ctx.KVStore(dKey).Delete(acc)
 				} else {
-					ctx.KVStore(dKey).Set(acc, cdc.MustMarshalBinaryBare(di))
+					ctx.KVStore(dKey).Set(acc, cdc.MustMarshal(di))
 				}
 			}
 
 			copy(key[len(bankT.BalancesPrefix):], acc.Bytes())
-			bStore.Set(key, cdc.MustMarshalBinaryBare(&bankT.Balance{Coins: balance}))
+			bStore.Set(key, cdc.MustMarshal(&bankT.Balance{Coins: balance}))
 
 			dMain = dMain.Add(mainBal)
 			dRevoke = dRevoke.Add(revokeBal)
@@ -427,7 +427,7 @@ func RefreshReferralStatuses(rk referralK.Keeper) upgrade.UpgradeHandler {
 	}
 }
 
-func UnbanishAccountsWithDelegation(bk bank.Keeper, sk scheduleK.Keeper, cdc codec.BinaryMarshaler, rKey sdk.StoreKey) upgrade.UpgradeHandler {
+func UnbanishAccountsWithDelegation(bk bank.Keeper, sk scheduleK.Keeper, cdc codec.BinaryCodec, rKey sdk.StoreKey) upgrade.UpgradeHandler {
 	return func(ctx sdk.Context, _ upgrade.Plan) {
 		logger := ctx.Logger().With("module", "x/upgrade")
 		logger.Info("Starting UnbanishAccountsWithDelegation ...")
@@ -439,11 +439,11 @@ func UnbanishAccountsWithDelegation(bk bank.Keeper, sk scheduleK.Keeper, cdc cod
 				panic("not found")
 			}
 			var r referralT.Info
-			cdc.MustUnmarshalBinaryBare(bz, &r)
+			cdc.MustUnmarshal(bz, &r)
 			return r
 		}
 		set := func(acc string, value referralT.Info) {
-			store.Set([]byte(acc), cdc.MustMarshalBinaryBare(&value))
+			store.Set([]byte(acc), cdc.MustMarshal(&value))
 		}
 
 		it := store.Iterator(nil, nil)
@@ -537,7 +537,7 @@ func UnbanishAccountsWithDelegation(bk bank.Keeper, sk scheduleK.Keeper, cdc cod
 	}
 }
 
-func TransferFromTheBanished(sk scheduleK.Keeper, cdc codec.BinaryMarshaler, rKey sdk.StoreKey) upgrade.UpgradeHandler {
+func TransferFromTheBanished(sk scheduleK.Keeper, cdc codec.BinaryCodec, rKey sdk.StoreKey) upgrade.UpgradeHandler {
 	return func(ctx sdk.Context, _ upgrade.Plan) {
 		logger := ctx.Logger().With("module", "x/upgrade")
 		logger.Info("Starting TransferFromTheBanished ...")
@@ -549,11 +549,11 @@ func TransferFromTheBanished(sk scheduleK.Keeper, cdc codec.BinaryMarshaler, rKe
 				panic("not found")
 			}
 			var r referralT.Info
-			cdc.MustUnmarshalBinaryBare(bz, &r)
+			cdc.MustUnmarshal(bz, &r)
 			return r
 		}
 		set := func(acc string, value referralT.Info) {
-			store.Set([]byte(acc), cdc.MustMarshalBinaryBare(&value))
+			store.Set([]byte(acc), cdc.MustMarshal(&value))
 		}
 
 		it := store.Iterator(nil, nil)
@@ -571,7 +571,7 @@ func TransferFromTheBanished(sk scheduleK.Keeper, cdc codec.BinaryMarshaler, rKe
 			acc := string(it.Key())
 
 			var r referralT.Info
-			cdc.MustUnmarshalBinaryBare(it.Value(), &r)
+			cdc.MustUnmarshal(it.Value(), &r)
 			if r.Banished || r.Referrer == "" {
 				continue
 			}
@@ -722,7 +722,7 @@ func InitBurnOnRevokeParam() upgrade.UpgradeHandler {
 	}
 }
 
-func UpdateStatusDowngradeTasks(sk scheduleK.Keeper, rKey, sKey sdk.StoreKey, cdc codec.BinaryMarshaler) upgrade.UpgradeHandler {
+func UpdateStatusDowngradeTasks(sk scheduleK.Keeper, rKey, sKey sdk.StoreKey, cdc codec.BinaryCodec) upgrade.UpgradeHandler {
 	return func(ctx sdk.Context, plan upgrade.Plan) {
 		logger := ctx.Logger().With("module", "x/upgrade")
 		logger.Info("Starting UpdateStatusDowngradeTasks ...")
@@ -742,7 +742,7 @@ func UpdateStatusDowngradeTasks(sk scheduleK.Keeper, rKey, sKey sdk.StoreKey, cd
 			logger.Info("... fixing schedule ...")
 			for ; sIt.Valid(); sIt.Next() {
 				var sch scheduleT.Schedule
-				cdc.MustUnmarshalBinaryBare(sIt.Value(), &sch)
+				cdc.MustUnmarshal(sIt.Value(), &sch)
 
 				changed := false
 				tasks := make([]scheduleT.Task, 0, len(sch.Tasks))
@@ -768,7 +768,7 @@ func UpdateStatusDowngradeTasks(sk scheduleK.Keeper, rKey, sKey sdk.StoreKey, cd
 						sStore.Delete(sIt.Key())
 					} else {
 						sch.Tasks = tasks
-						sStore.Set(sIt.Key(), cdc.MustMarshalBinaryBare(&sch))
+						sStore.Set(sIt.Key(), cdc.MustMarshal(&sch))
 					}
 				}
 			}
@@ -782,12 +782,12 @@ func UpdateStatusDowngradeTasks(sk scheduleK.Keeper, rKey, sKey sdk.StoreKey, cd
 				acc := string(rIt.Key())
 
 				var r referralT.Info
-				cdc.MustUnmarshalBinaryBare(rIt.Value(), &r)
+				cdc.MustUnmarshal(rIt.Value(), &r)
 				if r.StatusDowngradeAt != nil {
 					logger.Debug("find referral StatusDowngradeAt", "acc", acc, "statusDowngradeAt", r.StatusDowngradeAt.String())
 					if r.StatusDowngradeAt.After(newDowngradeTime) {
 						r.StatusDowngradeAt = &newDowngradeTime
-						rStore.Set(rIt.Key(), cdc.MustMarshalBinaryBare(&r))
+						rStore.Set(rIt.Key(), cdc.MustMarshal(&r))
 						logger.Debug("update referral StatusDowngradeAt", "acc", acc, "statusDowngradeAt", r.StatusDowngradeAt.String())
 					}
 				}
@@ -819,7 +819,7 @@ func InitMaxTransactionFeeParam(k bank.Keeper, paramspace params.Subspace) upgra
 	}
 }
 
-func FixStatusDowngradeTasks(sk scheduleK.Keeper, sKey sdk.StoreKey, cdc codec.BinaryMarshaler) upgrade.UpgradeHandler {
+func FixStatusDowngradeTasks(sk scheduleK.Keeper, sKey sdk.StoreKey, cdc codec.BinaryCodec) upgrade.UpgradeHandler {
 	return func(ctx sdk.Context, plan upgrade.Plan) {
 		logger := ctx.Logger().With("module", "x/upgrade")
 		logger.Info("Starting UpdateStatusDowngradeTasks ...")
@@ -839,7 +839,7 @@ func FixStatusDowngradeTasks(sk scheduleK.Keeper, sKey sdk.StoreKey, cdc codec.B
 			logger.Info("... fixing schedule ...")
 			for ; sIt.Valid(); sIt.Next() {
 				var sch scheduleT.Schedule
-				cdc.MustUnmarshalBinaryBare(sIt.Value(), &sch)
+				cdc.MustUnmarshal(sIt.Value(), &sch)
 
 				changed := false
 				tasks := make([]scheduleT.Task, 0, len(sch.Tasks))
@@ -866,7 +866,7 @@ func FixStatusDowngradeTasks(sk scheduleK.Keeper, sKey sdk.StoreKey, cdc codec.B
 						sStore.Delete(sIt.Key())
 					} else {
 						sch.Tasks = tasks
-						sStore.Set(sIt.Key(), cdc.MustMarshalBinaryBare(&sch))
+						sStore.Set(sIt.Key(), cdc.MustMarshal(&sch))
 					}
 				}
 			}
@@ -880,11 +880,11 @@ func FixStatusDowngradeTasks(sk scheduleK.Keeper, sKey sdk.StoreKey, cdc codec.B
 				newDowngradeTime = newDowngradeTime.Add(shiftInterval)
 				fixKey := scheduleK.Key(newDowngradeTime)
 				var fixSch scheduleT.Schedule
-				if err := cdc.UnmarshalBinaryBare(fixKey, &fixSch); err != nil {
+				if err := cdc.Unmarshal(fixKey, &fixSch); err != nil {
 					logger.Debug("not found key by", "t", newDowngradeTime.String())
 				}
 				fixSch.Tasks = append(fixSch.Tasks, task)
-				sStore.Set(fixKey, cdc.MustMarshalBinaryBare(&fixSch))
+				sStore.Set(fixKey, cdc.MustMarshal(&fixSch))
 				logger.Debug("relocate hook", "handlerName", task.HandlerName, "t", task.Time.String(), "data", task.Data)
 			}
 
@@ -1067,7 +1067,7 @@ func InitRevokeAndExpressRevokeParams() upgrade.UpgradeHandler {
 	}
 }
 
-func DeactivateTopLevelAccounts(pKey sdk.StoreKey, rKey sdk.StoreKey, cdc codec.BinaryMarshaler) upgrade.UpgradeHandler {
+func DeactivateTopLevelAccounts(pKey sdk.StoreKey, rKey sdk.StoreKey, cdc codec.BinaryCodec) upgrade.UpgradeHandler {
 	return func(ctx sdk.Context, _ upgrade.Plan) {
 		logger := ctx.Logger().With("module", "x/upgrade")
 		logger.Info("Starting DeactivateTopLevelAccounts ...")
@@ -1078,21 +1078,21 @@ func DeactivateTopLevelAccounts(pKey sdk.StoreKey, rKey sdk.StoreKey, cdc codec.
 		defer itr.Close()
 		for ; itr.Valid(); itr.Next() {
 			var info referralT.Info
-			cdc.MustUnmarshalBinaryBare(itr.Value(), &info)
+			cdc.MustUnmarshal(itr.Value(), &info)
 			if info.Referrer == "" {
 				logger.Debug("... deactivate top level accounts",
 					"acc", string(itr.Key()),
 				)
 				info.Active = false
-				rStore.Set(itr.Key(), cdc.MustMarshalBinaryBare(&info))
+				rStore.Set(itr.Key(), cdc.MustMarshal(&info))
 				addr, err := sdk.AccAddressFromBech32(string(itr.Key()))
 				if err != nil {
 					panic(err)
 				}
 				var profile profileT.Profile
-				cdc.MustUnmarshalBinaryBare(pStore.Get(addr), &profile)
+				cdc.MustUnmarshal(pStore.Get(addr), &profile)
 				profile.ActiveUntil = nil
-				pStore.Set(addr, cdc.MustMarshalBinaryBare(&profile))
+				pStore.Set(addr, cdc.MustMarshal(&profile))
 			}
 		}
 
@@ -1100,7 +1100,7 @@ func DeactivateTopLevelAccounts(pKey sdk.StoreKey, rKey sdk.StoreKey, cdc codec.
 	}
 }
 
-func AddMissingProfileRefreshTask(sk scheduleK.Keeper, pKey sdk.StoreKey, cdc codec.BinaryMarshaler) upgrade.UpgradeHandler {
+func AddMissingProfileRefreshTask(sk scheduleK.Keeper, pKey sdk.StoreKey, cdc codec.BinaryCodec) upgrade.UpgradeHandler {
 	return func(ctx sdk.Context, _ upgrade.Plan) {
 		logger := ctx.Logger().With("module", "x/upgrade")
 		logger.Info("Starting AddMissingProfileRefreshTask ...")
@@ -1115,7 +1115,7 @@ func AddMissingProfileRefreshTask(sk scheduleK.Keeper, pKey sdk.StoreKey, cdc co
 		defer pIt.Close()
 		for ; pIt.Valid(); pIt.Next() {
 			var profile profileT.Profile
-			cdc.MustUnmarshalBinaryBare(pIt.Value(), &profile)
+			cdc.MustUnmarshal(pIt.Value(), &profile)
 			if profile.ActiveUntil != nil && profile.ActiveUntil.After(monthLater) {
 				var addr sdk.AccAddress = pIt.Key()
 				for t := *profile.ActiveUntil; t.After(monthLater); t = t.Add(-month) {

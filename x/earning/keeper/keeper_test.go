@@ -32,7 +32,7 @@ type Suite struct {
 	app     *app.ArteryApp
 	cleanup func()
 
-	cdc      codec.BinaryMarshaler
+	cdc      codec.BinaryCodec
 	ctx      sdk.Context
 	k        earning.Keeper
 	ak       authK.AccountKeeper

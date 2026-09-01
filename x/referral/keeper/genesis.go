@@ -133,7 +133,7 @@ func (k Keeper) ImportFromGenesis(
 		for _, ba := range banished {
 			store.Set(
 				[]byte(ba.Account),
-				k.cdc.MustMarshalBinaryBare(&types.Info{
+				k.cdc.MustMarshal(&types.Info{
 					Referrer:  ba.FormerReferrer,
 					Coins:     []sdk.Int{k.getBalance(ctx, ba.Account)},
 					Delegated: []sdk.Int{k.getDelegated(ctx, ba.Account)},

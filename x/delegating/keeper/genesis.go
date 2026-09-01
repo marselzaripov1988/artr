@@ -21,7 +21,7 @@ func (k Keeper) InitAccounts(ctx sdk.Context, accounts []types.Account) {
 			NextAccrue: account.NextAccrue,
 			Requests:   account.Requests,
 		}
-		bz := k.cdc.MustMarshalBinaryBare(&item)
+		bz := k.cdc.MustMarshal(&item)
 		store.Set(byteKey, bz)
 	}
 }
@@ -34,7 +34,7 @@ func (k Keeper) ExportAccounts(ctx sdk.Context) []types.Account {
 	for ; it.Valid(); it.Next() {
 		acc := sdk.AccAddress(it.Key())
 		var r types.Record
-		k.cdc.MustUnmarshalBinaryBare(it.Value(), &r)
+		k.cdc.MustUnmarshal(it.Value(), &r)
 		result = append(result, types.Account{
 			Address:    acc.String(),
 			NextAccrue: r.NextAccrue,

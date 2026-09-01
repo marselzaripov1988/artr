@@ -28,7 +28,7 @@ import (
 type Keeper struct {
 	dataStoreKey               sdk.StoreKey
 	indexStoreKey              sdk.StoreKey
-	cdc                        codec.BinaryMarshaler
+	cdc                        codec.BinaryCodec
 	referralKeeper             types.ReferralKeeper
 	accountKeeper              types.AccountKeeper
 	bankKeeper                 types.BankKeeper
@@ -39,7 +39,7 @@ type Keeper struct {
 
 // NewKeeper creates a noding keeper
 func NewKeeper(
-	cdc codec.BinaryMarshaler,
+	cdc codec.BinaryCodec,
 	dataKey sdk.StoreKey,
 	indexKey sdk.StoreKey,
 	referralKeeper types.ReferralKeeper,
@@ -346,7 +346,7 @@ func (k Keeper) GatherValidatorUpdates(ctx sdk.Context) ([]abci.ValidatorUpdate,
 			data types.Info
 		)
 		addr = sdk.AccAddress(it.Key())
-		k.cdc.MustUnmarshalBinaryBare(it.Value(), &data)
+		k.cdc.MustUnmarshal(it.Value(), &data)
 		if data.IsActive() {
 			active = append(active, types.NewInfoWithAccount(addr, data))
 			consAddress := consAddressFromCryptoBubKey(cryptoPubKeyFromBech32(data.PubKey))
@@ -984,12 +984,12 @@ func (k Keeper) update(ctx sdk.Context, acc sdk.AccAddress, callback func(d *typ
 	if !store.Has(keyBytes) {
 		return types.ErrNotFound
 	}
-	k.cdc.MustUnmarshalBinaryBare(store.Get(keyBytes), &value)
+	k.cdc.MustUnmarshal(store.Get(keyBytes), &value)
 	if !callback(&value) {
 		return nil
 	}
 
-	store.Set(keyBytes, k.cdc.MustMarshalBinaryBare(&value))
+	store.Set(keyBytes, k.cdc.MustMarshal(&value))
 	return nil
 }
 

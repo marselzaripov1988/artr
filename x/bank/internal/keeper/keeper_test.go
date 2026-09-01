@@ -28,7 +28,7 @@ type Suite struct {
 	cleanup func()
 	ctx     sdk.Context
 
-	cdc codec.BinaryMarshaler
+	cdc codec.BinaryCodec
 	k   bank.Keeper
 	rk  referralK.Keeper
 }

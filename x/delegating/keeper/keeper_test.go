@@ -36,7 +36,7 @@ type Suite struct {
 	app     *app.ArteryApp
 	cleanup func()
 
-	cdc       codec.BinaryMarshaler
+	cdc       codec.BinaryCodec
 	ctx       sdk.Context
 	k         delegating.Keeper
 	bk        bank.Keeper
@@ -772,7 +772,7 @@ func (s *Suite) nextBlock() (abci.ResponseEndBlock, abci.ResponseBeginBlock) {
 func (s *Suite) setMissedPart(user sdk.AccAddress, value util.Fraction) {
 	store := s.ctx.KVStore(s.app.GetKeys()[delegating.MainStoreKey])
 	var data types.Record
-	s.cdc.MustUnmarshalBinaryBare(store.Get(user), &data)
+	s.cdc.MustUnmarshal(store.Get(user), &data)
 	data.MissedPart = &value
-	store.Set(user, s.cdc.MustMarshalBinaryBare(&data))
+	store.Set(user, s.cdc.MustMarshal(&data))
 }

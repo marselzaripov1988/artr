@@ -258,7 +258,7 @@ func (s Suite) checkExportImport() {
 		map[string]app.Decoder{
 			noding.StoreKey: func(bz []byte) (string, error) {
 				var value types.Info
-				err := s.app.Codec().UnmarshalBinaryBare(bz, &value)
+				err := s.app.Codec().Unmarshal(bz, &value)
 				if err != nil {
 					return "", err
 				}
