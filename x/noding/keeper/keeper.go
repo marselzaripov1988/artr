@@ -17,6 +17,7 @@ import (
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	crypto "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	legacybech32 "github.com/cosmos/cosmos-sdk/types/bech32/legacybech32"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/arterynetwork/artr/util"
@@ -1002,11 +1003,17 @@ func abciPubKeyFromBech32(bech32 string) tmcrypto.PublicKey {
 }
 
 func cryptoPubKeyFromBech32(bech32 string) crypto.PubKey {
-	return sdk.MustGetPubKeyFromBech32(sdk.Bech32PubKeyTypeConsPub, bech32)
+	// Паникующего разбора в legacybech32 нет — прежнее поведение восстановлено
+	// явно, чтобы не менять сигнатуру внутреннего хелпера.
+	key, err := legacybech32.UnmarshalPubKey(legacybech32.ConsPK, bech32)
+	if err != nil {
+		panic(err)
+	}
+	return key
 }
 
 func bech32FromCryptoPubKey(key crypto.PubKey) string {
-	return sdk.MustBech32ifyPubKey(sdk.Bech32PubKeyTypeConsPub, key)
+	return legacybech32.MustMarshalPubKey(legacybech32.ConsPK, key)
 }
 
 func consAddressFromCryptoBubKey(key crypto.PubKey) sdk.ConsAddress {

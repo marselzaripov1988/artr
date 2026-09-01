@@ -1,3 +1,4 @@
+//go:build testing
 // +build testing
 
 package keeper_test
@@ -15,6 +16,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/testutil/testdata"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	legacybech32 "github.com/cosmos/cosmos-sdk/types/bech32/legacybech32"
 
 	"github.com/arterynetwork/artr/app"
 	"github.com/arterynetwork/artr/util"
@@ -56,7 +58,7 @@ func (s *SSuite) SetupTest() {
 
 	s.bbHeader = abci.RequestBeginBlock{
 		Header: tmproto.Header{
-			ProposerAddress: sdk.MustGetPubKeyFromBech32(sdk.Bech32PubKeyTypeConsPub, app.DefaultUser1ConsPubKey).Address().Bytes(),
+			ProposerAddress: legacybech32.MustUnmarshalPubKey(legacybech32.ConsPK, app.DefaultUser1ConsPubKey).Address().Bytes(),
 		},
 	}
 }

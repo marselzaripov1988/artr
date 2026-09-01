@@ -136,7 +136,7 @@ type ArteryApp struct {
 }
 
 // verify app interface at compile time
-//var _ simapp.App = (*ArteryApp)(nil)
+// var _ simapp.App = (*ArteryApp)(nil)
 var _ serverTypes.Application = (*ArteryApp)(nil)
 
 // NewArteryApp is a constructor function for ArteryApp

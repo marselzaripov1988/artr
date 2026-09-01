@@ -1,3 +1,4 @@
+//go:build testing
 // +build testing
 
 package keeper_test
@@ -13,6 +14,7 @@ import (
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	legacybech32 "github.com/cosmos/cosmos-sdk/types/bech32/legacybech32"
 
 	"github.com/arterynetwork/artr/app"
 	"github.com/arterynetwork/artr/util"
@@ -56,7 +58,7 @@ func (s *BaseSuite) setupTest(genesis []byte, consPubKey string) {
 
 	s.bbHeader = abci.RequestBeginBlock{
 		Header: tmproto.Header{
-			ProposerAddress: sdk.MustGetPubKeyFromBech32(sdk.Bech32PubKeyTypeConsPub, consPubKey).Address().Bytes(),
+			ProposerAddress: legacybech32.MustUnmarshalPubKey(legacybech32.ConsPK, consPubKey).Address().Bytes(),
 		},
 	}
 }
