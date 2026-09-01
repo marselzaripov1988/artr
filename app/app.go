@@ -147,7 +147,7 @@ func NewArteryApp(
 	// BaseApp handles interactions with Tendermint through the ABCI protocol
 	bApp := bam.NewBaseApp(appName, logger, db, ec.TxConfig.TxDecoder(), baseAppOptions...)
 	bApp.SetCommitMultiStoreTracer(traceStore)
-	bApp.SetAppVersion(version.Version)
+	bApp.SetVersion(version.Version)
 	bApp.SetInterfaceRegistry(ec.InterfaceRegistry)
 
 	keys := sdk.NewKVStoreKeys(authTypes.StoreKey, bank.StoreKey,
@@ -271,6 +271,9 @@ func NewArteryApp(
 		keys[upgradeTypes.StoreKey],
 		ec.Marshaler,
 		"",
+		// SDK 0.43 добавил пятым аргументом ProtocolVersionSetter — через него
+		// модуль апгрейда проставляет версию протокола в BaseApp.
+		app.BaseApp,
 	)
 
 	app.nodingKeeper = nodingKeeper.NewKeeper(
@@ -335,115 +338,15 @@ func NewArteryApp(
 	app.referralKeeper.AddHook(referral.StakeChangedCallback, app.nodingKeeper.OnStakeChanged)
 	app.referralKeeper.AddHook(referral.BanishedCallback, app.delegatingKeeper.OnBanished)
 
-	app.upgradeKeeper.SetUpgradeHandler("2.0.1", RecalculateActiveReferrals(*app.referralKeeper))
-	app.upgradeKeeper.SetUpgradeHandler("2.1.0",
-		ScheduleBanishment(
-			*app.referralKeeper,
-			app.bankKeeper,
-			keys[referral.StoreKey],
-			keys[scheduleTypes.StoreKey],
-			ec.Marshaler,
-		),
-	)
-	app.upgradeKeeper.SetUpgradeHandler("2.2.0", Chain(
-		InitPollPeriodParam(app.votingKeeper, app.subspaces[votingTypes.DefaultParamspace]),
-		ForceOnStatusChangedCallback(app.nodingKeeper),
-	))
-	app.upgradeKeeper.SetUpgradeHandler("2.2.1", Chain(
-		ForceGlobalDelegation(
-			*app.referralKeeper,
-			app.bankKeeper,
-			*app.delegatingKeeper,
-			app.scheduleKeeper,
-			keys[bank.StoreKey],
-			keys[delegating.MainStoreKey],
-			ec.Marshaler,
-		),
-		RefreshReferralStatuses(*app.referralKeeper),
-	))
-	app.upgradeKeeper.SetUpgradeHandler("2.3.0", NopUpgradeHandler)
-	app.upgradeKeeper.SetUpgradeHandler("2.3.1", RefreshReferralStatuses(*app.referralKeeper))
-	app.upgradeKeeper.SetUpgradeHandler("2.3.2", Chain(
-		TransferFromTheBanished(app.scheduleKeeper, ec.Marshaler, keys[referral.StoreKey]),
-		UnbanishAccountsWithDelegation(app.bankKeeper, app.scheduleKeeper, ec.Marshaler, keys[referral.StoreKey]),
-		RefreshReferralStatuses(*app.referralKeeper),
-	))
-
-	app.upgradeKeeper.SetUpgradeHandler("2.4.0", InitValidatorBonusParam())
-	app.upgradeKeeper.SetUpgradeHandler("2.4.1",
-		InitValidatorParam(),
-	)
-
-	app.upgradeKeeper.SetUpgradeHandler("2.4.2", Chain(
-		InitTransactionFeeParam(app.bankKeeper, app.subspaces[bank.DefaultParamspace]),
-		RemovePromoBonuses(),
-		RemoveStatusBonuses(),
-		RemoveLeaderBonuses(),
-	))
-
-	app.upgradeKeeper.SetUpgradeHandler("2.4.3", Chain(
-		InitBurnOnRevokeParam(),
-		UpdateStatusDowngradeTasks(app.scheduleKeeper, keys[referral.StoreKey], keys[scheduleTypes.StoreKey], ec.Marshaler),
-	))
-
-	app.upgradeKeeper.SetUpgradeHandler("2.4.4", Chain(
-		InitMaxTransactionFeeParam(app.bankKeeper, app.subspaces[bank.DefaultParamspace]),
-		FixStatusDowngradeTasks(app.scheduleKeeper, keys[scheduleTypes.StoreKey], ec.Marshaler),
-	))
-
-	app.upgradeKeeper.SetUpgradeHandler("2.4.5", Chain(
-		ScheduleMissingBanishmentAndRefreshReferralStatuses(*app.referralKeeper, app.bankKeeper, app.scheduleKeeper),
-	))
-
-	app.upgradeKeeper.SetUpgradeHandler("2.4.6", Chain(
-		InitTransactionFeeSplitRatiosAndCompanyAccountParams(app.bankKeeper, app.subspaces[bank.DefaultParamspace]),
-	))
-
-	app.upgradeKeeper.SetUpgradeHandler("2.4.7", Chain(
-		InitAccruePercentageRangesAndValidatorBonusParams(),
-	))
-
-	app.upgradeKeeper.SetUpgradeHandler("2.4.8", Chain(
-		InitBlockedSendersParam(app.bankKeeper, app.subspaces[bank.DefaultParamspace]),
-	))
-
-	app.upgradeKeeper.SetUpgradeHandler("2.5.0", Chain(
-		CleanEarningStore(keys[earning.StoreKey]),
-		InitSubscriptionVpnStorageBonusesParams(),
-	))
-
-	app.upgradeKeeper.SetUpgradeHandler("2.5.1", Chain(
-		InitAccruePercentageTableParams(),
-	))
-
-	app.upgradeKeeper.SetUpgradeHandler("2.5.2", Chain(
-		EmptyEarningVpnStorageCollectors(app.accountKeeper, app.bankKeeper, *app.referralKeeper),
-	))
-
-	app.upgradeKeeper.SetUpgradeHandler("2.5.3", Chain(
-		NopUpgradeHandler,
-	))
-
-	app.upgradeKeeper.SetUpgradeHandler("2.5.4", Chain(
-		NopUpgradeHandler,
-	))
-
-	app.upgradeKeeper.SetUpgradeHandler("2.5.5", Chain(
-		InitMinCriteriaParam(),
-	))
-
-	app.upgradeKeeper.SetUpgradeHandler("2.5.6", Chain(
-		NopUpgradeHandler,
-	))
-
-	app.upgradeKeeper.SetUpgradeHandler("2.5.7", Chain(
-		InitRevokeAndExpressRevokeParams(),
-	))
-
-	app.upgradeKeeper.SetUpgradeHandler("2.5.8", Chain(
-		DeactivateTopLevelAccounts(keys[profileTypes.StoreKey], keys[referral.StoreKey], ec.Marshaler),
-		AddMissingProfileRefreshTask(app.scheduleKeeper, keys[profileTypes.StoreKey], ec.Marshaler),
-	))
+	// Исторические обработчики апгрейдов (2.0.1 ... 2.5.8) удалены намеренно.
+	//
+	// Переход на новую версию SDK делается способом, который команда уже
+	// применяла для v1 -> v2: экспорт состояния, офлайн-переписывание генезиса
+	// (см. patch-genesis/) и запуск цепочки заново с высоты 1. Историю сеть
+	// при этом не проигрывает, поэтому обработчики прошлых апгрейдов
+	// становятся мёртвым кодом.
+	//
+	// Новые обработчики регистрируются здесь по мере появления.
 
 	// NOTE: Any module instantiated in the module manager that is later modified
 	// must be passed by reference here.
@@ -502,7 +405,7 @@ func NewArteryApp(
 
 	// register all module routes and module queriers
 	app.mm.RegisterRoutes(app.Router(), app.QueryRouter(), ec.Amino)
-	app.mm.RegisterServices(module.NewConfigurator(app.MsgServiceRouter(), app.GRPCQueryRouter()))
+	app.mm.RegisterServices(module.NewConfigurator(ec.Marshaler, app.MsgServiceRouter(), app.GRPCQueryRouter()))
 
 	// The initChainer handles translating the genesis.json file into initial state for the network
 	app.SetInitChainer(app.InitChainer)
@@ -510,14 +413,22 @@ func NewArteryApp(
 	app.SetEndBlocker(app.EndBlocker)
 
 	// The AnteHandler handles signature verification and transaction pre-processing
-	app.SetAnteHandler(
-		ante.NewAnteHandler(
-			app.accountKeeper,
-			app.bankKeeper,
-			ante.DefaultSigVerificationGasConsumer,
-			ec.TxConfig.SignModeHandler(),
-		),
+	//
+	// В SDK 0.43 позиционные аргументы заменены на структуру HandlerOptions,
+	// а конструктор стал возвращать ошибку. FeegrantKeeper оставлен пустым:
+	// модуля feegrant в Artery нет, и NewDeductFeeDecorator это допускает.
+	anteHandler, err := ante.NewAnteHandler(
+		ante.HandlerOptions{
+			AccountKeeper:   app.accountKeeper,
+			BankKeeper:      app.bankKeeper,
+			SignModeHandler: ec.TxConfig.SignModeHandler(),
+			SigGasConsumer:  ante.DefaultSigVerificationGasConsumer,
+		},
 	)
+	if err != nil {
+		panic(errors.Wrap(err, "cannot build ante handler"))
+	}
+	app.SetAnteHandler(anteHandler)
 
 	// initialize stores
 	app.MountKVStores(keys)
