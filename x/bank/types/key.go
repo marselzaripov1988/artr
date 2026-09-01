@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/address"
 )
 
 const (
@@ -30,9 +31,11 @@ func DenomMetadataKey(denom string) []byte {
 // store. The key must not contain the perfix BalancesPrefix as the prefix store
 // iterator discards the actual prefix.
 func AddressFromBalancesStore(key []byte) sdk.AccAddress {
-	addr := key[:sdk.AddrLen]
-	if len(addr) != sdk.AddrLen {
-		panic(fmt.Sprintf("unexpected account address key length; got: %d, expected: %d", len(addr), sdk.AddrLen))
+	// SDK 0.43 убрал sdk.AddrLen — адреса стали переменной длины. У Artery
+	// они по-прежнему ровно 20 байт (см. app/config.go), что и есть address.Len.
+	addr := key[:address.Len]
+	if len(addr) != address.Len {
+		panic(fmt.Sprintf("unexpected account address key length; got: %d, expected: %d", len(addr), address.Len))
 	}
 
 	return sdk.AccAddress(addr)

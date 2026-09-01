@@ -6,13 +6,14 @@ import (
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/msgservice"
-	"github.com/cosmos/cosmos-sdk/x/bank/exported"
 )
 
 // RegisterLegacyAminoCodec registers the necessary x/bank interfaces and concrete types
 // on the provided LegacyAmino codec. These types are used for Amino JSON serialization.
 func RegisterLegacyAminoCodec(cdc *codec.LegacyAmino) {
-	cdc.RegisterInterface((*exported.SupplyI)(nil), nil)
+	// SDK 0.43 убрал x/bank/exported.SupplyI: supply перестал быть отдельным
+	// типом и хранится обычными монетами. У Artery он и так лежит под своим
+	// ключом (SupplyKey), поэтому регистрация интерфейса просто уходит.
 	cdc.RegisterConcrete(&MsgSend{}, "artery/MsgSend", nil)
 	cdc.RegisterConcrete(&MsgBurn{}, "artery/MsgBurn", nil)
 }
@@ -21,11 +22,6 @@ func RegisterInterfaces(registry types.InterfaceRegistry) {
 	registry.RegisterImplementations((*sdk.Msg)(nil),
 		&MsgSend{},
 		&MsgBurn{},
-	)
-
-	registry.RegisterInterface(
-		"cosmos.bank.v1beta1.SupplyI",
-		(*exported.SupplyI)(nil),
 	)
 
 	msgservice.RegisterMsgServiceDesc(registry, &_Msg_serviceDesc)
