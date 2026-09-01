@@ -24,3 +24,8 @@ client/docs/statik
 
 # Python cache
 **/__pycache__/
+
+# Local tooling
+.claude/
+.vscode/
+launch.json
