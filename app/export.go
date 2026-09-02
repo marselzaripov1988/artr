@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	serverTypes "github.com/cosmos/cosmos-sdk/server/types"
 
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )

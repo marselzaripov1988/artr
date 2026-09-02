@@ -9,7 +9,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 
-	abci "github.com/tendermint/tendermint/abci/types"
+	abci "github.com/cometbft/cometbft/abci/types"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -30,7 +30,7 @@ func (EventMessage) XXX_MessageName() string { return "message" }
 // EmitEvent emits a typed event like the sdk.EventManager.EmitTypedEvent method does, but it unquotes string
 // attribute values so Tendermint could search txs by them.
 //
-// See https://github.com/tendermint/tendermint/issues/6809
+// See https://github.com/cometbft/cometbft/issues/6809
 func EmitEvent(ctx sdk.Context, tev proto.Message) {
 	//goland:noinspection GoDeprecation
 	ctx.EventManager().EmitEvent(patchEvent(tev))
@@ -39,7 +39,7 @@ func EmitEvent(ctx sdk.Context, tev proto.Message) {
 // EmitEvents emits typed events like the sdk.EventManager.EmitTypedEvents method does, but it unquotes string
 // attribute values so Tendermint could search txs by them.
 //
-// See https://github.com/tendermint/tendermint/issues/6809
+// See https://github.com/cometbft/cometbft/issues/6809
 func EmitEvents(ctx sdk.Context, tevs ...proto.Message) {
 	events := make([]sdk.Event, 0, len(tevs))
 	for _, tev := range tevs {

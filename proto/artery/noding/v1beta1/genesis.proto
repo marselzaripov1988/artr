@@ -77,7 +77,7 @@ message Validator {
     (gogoproto.moretags) = "yaml:\"proposed_blocks,omitempty\""
   ];
 
-  repeated tendermint.abci.Evidence infractions = 16 [
+  repeated tendermint.abci.Misbehavior infractions = 16 [
     (gogoproto.nullable) = false,
     (gogoproto.jsontag)  = "infractions,omitempty",
     (gogoproto.moretags) = "yaml:\"infractions,omitempty\""

@@ -10,8 +10,8 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	abci "github.com/tendermint/tendermint/abci/types"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+	abci "github.com/cometbft/cometbft/abci/types"
+	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 
 	crypto "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -171,7 +171,7 @@ func (s Suite) TestByzantine() {
 			{Validator: val2, SignedLastBlock: true},
 			{Validator: val3, SignedLastBlock: true},
 		},
-		[]abci.Evidence{
+		[]abci.Misbehavior{
 			{
 				Type:      abci.EvidenceType_DUPLICATE_VOTE,
 				Validator: val2,
@@ -186,7 +186,7 @@ func (s Suite) TestByzantine() {
 			{Validator: val2, SignedLastBlock: false},
 			{Validator: val3, SignedLastBlock: false},
 		},
-		[]abci.Evidence{
+		[]abci.Misbehavior{
 			{
 				Type:      abci.EvidenceType_DUPLICATE_VOTE,
 				Validator: val2,
@@ -274,7 +274,7 @@ func (s Suite) checkExportImport() {
 	)
 }
 
-func (s *Suite) nextBlock(proposer crypto.PubKey, votes []abci.VoteInfo, byzantine []abci.Evidence) (abci.ResponseEndBlock, abci.ResponseBeginBlock) {
+func (s *Suite) nextBlock(proposer crypto.PubKey, votes []abci.VoteInfo, byzantine []abci.Misbehavior) (abci.ResponseEndBlock, abci.ResponseBeginBlock) {
 	ebr := s.app.EndBlocker(s.ctx, abci.RequestEndBlock{Height: s.ctx.BlockHeight()})
 	s.ctx = s.ctx.WithBlockHeight(s.ctx.BlockHeight() + 1)
 	bbr := s.app.BeginBlocker(s.ctx, abci.RequestBeginBlock{

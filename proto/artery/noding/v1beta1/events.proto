@@ -19,5 +19,5 @@ message EventValidatorJailed {
 message EventByzantine {
   string address = 1;
   bool banned = 2;
-  repeated tendermint.abci.Evidence evidences = 3 [(gogoproto.nullable) = false];
+  repeated tendermint.abci.Misbehavior evidences = 3 [(gogoproto.nullable) = false];
 }

@@ -10,9 +10,9 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	abci "github.com/tendermint/tendermint/abci/types"
-	tmcrypto "github.com/tendermint/tendermint/proto/tendermint/crypto"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+	abci "github.com/cometbft/cometbft/abci/types"
+	tmcrypto "github.com/cometbft/cometbft/proto/tendermint/crypto"
+	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
@@ -184,7 +184,7 @@ func (s *Suite) TestByzantine() {
 	votes := []abci.VoteInfo{{Validator: validator, SignedLastBlock: true}}
 
 	// First infraction
-	s.nextBlock(pubkey, votes, []abci.Evidence{{
+	s.nextBlock(pubkey, votes, []abci.Misbehavior{{
 		Type:             abci.EvidenceType_DUPLICATE_VOTE,
 		Validator:        validator,
 		Height:           s.ctx.BlockHeight(),
@@ -199,7 +199,7 @@ func (s *Suite) TestByzantine() {
 	}
 
 	// Second infraction
-	s.nextBlock(pubkey, votes, []abci.Evidence{{
+	s.nextBlock(pubkey, votes, []abci.Misbehavior{{
 		Type:             abci.EvidenceType_DUPLICATE_VOTE,
 		Validator:        validator,
 		Height:           s.ctx.BlockHeight(),
@@ -483,7 +483,7 @@ func (s *BaseSuite) TearDownTest() {
 	}
 }
 
-func (s *BaseSuite) nextBlock(proposer crypto.PubKey, votes []abci.VoteInfo, byzantine []abci.Evidence) (abci.ResponseEndBlock, abci.ResponseBeginBlock) {
+func (s *BaseSuite) nextBlock(proposer crypto.PubKey, votes []abci.VoteInfo, byzantine []abci.Misbehavior) (abci.ResponseEndBlock, abci.ResponseBeginBlock) {
 	ebr := s.app.EndBlocker(s.ctx, abci.RequestEndBlock{Height: s.ctx.BlockHeight()})
 
 	s.ctx = s.ctx.

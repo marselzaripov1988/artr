@@ -5,7 +5,7 @@ import (
 	"errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	abci "github.com/tendermint/tendermint/abci/types"
+	abci "github.com/cometbft/cometbft/abci/types"
 )
 
 // BeginBlocker check for infraction evidence or downtime of validators
@@ -56,7 +56,7 @@ func findValidatorAccAddress(ctx sdk.Context, k Keeper, validator abci.Validator
 }
 
 // punishWrongdoers - records infractions to the store and ban validators if needed
-func punishWrongdoers(ctx sdk.Context, evz []abci.Evidence, k Keeper) error {
+func punishWrongdoers(ctx sdk.Context, evz []abci.Misbehavior, k Keeper) error {
 	for _, ev := range evz {
 		accAddr, err := findValidatorAccAddress(ctx, k, ev.Validator)
 		if err != nil {

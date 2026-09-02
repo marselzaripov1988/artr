@@ -13,7 +13,7 @@ import (
 	codecTypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
-	abci "github.com/tendermint/tendermint/abci/types"
+	abci "github.com/cometbft/cometbft/abci/types"
 
 	"github.com/arterynetwork/artr/x/voting/client/cli"
 	"github.com/arterynetwork/artr/x/voting/keeper"

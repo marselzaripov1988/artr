@@ -58,7 +58,7 @@ message Info {
   int64 score = 14;
 
   // Infractions - evidences of byzantine behavior (from Tendermint)
-  repeated tendermint.abci.Evidence infractions = 16 [
+  repeated tendermint.abci.Misbehavior infractions = 16 [
     (gogoproto.nullable) = false,
     (gogoproto.moretags) = "yaml:\"infractions,omitempty\""
   ];
