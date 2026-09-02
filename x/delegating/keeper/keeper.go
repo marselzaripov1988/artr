@@ -8,6 +8,7 @@ import (
 	"github.com/cometbft/cometbft/libs/log"
 
 	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/store/prefix"
 	storeTypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -57,6 +58,12 @@ func (k *Keeper) SetKeepers(nodingKeeper types.NodingKeeper, earningKeeper types
 	k.earningKeeper = earningKeeper
 }
 
+// recordStore возвращает часть стора модуля с записями делегирования.
+// Параметры лежат в том же сторе под отдельным ключом.
+func (k Keeper) recordStore(ctx sdk.Context) prefix.Store {
+	return prefix.NewStore(ctx.KVStore(k.mainStoreKey), types.RecordPrefix)
+}
+
 // Logger returns a module-specific logger.
 func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
@@ -67,7 +74,7 @@ func (k Keeper) Revoke(ctx sdk.Context, acc sdk.AccAddress, uartrs sdk.Int, expr
 		return nil
 	}
 	var (
-		store      = ctx.KVStore(k.mainStoreKey)
+		store      = k.recordStore(ctx)
 		byteKey    = []byte(acc)
 		current, _ = k.getDelegated(ctx, acc)
 
@@ -134,7 +141,7 @@ func (k Keeper) Delegate(ctx sdk.Context, acc sdk.AccAddress, uartrs sdk.Int) er
 	uartrs = uartrs.Sub(fee.AmountOf(util.ConfigMainDenom))
 
 	var (
-		store       = ctx.KVStore(k.mainStoreKey)
+		store       = k.recordStore(ctx)
 		byteKey     = []byte(acc)
 		nextPayment = ctx.BlockTime().Add(k.scheduleKeeper.OneDay(ctx))
 
@@ -186,7 +193,7 @@ func (k Keeper) GetRevoking(ctx sdk.Context, acc sdk.AccAddress) []types.RevokeR
 
 func (k Keeper) Get(ctx sdk.Context, acc sdk.AccAddress) *types.Record {
 	var (
-		store   = ctx.KVStore(k.mainStoreKey)
+		store   = k.recordStore(ctx)
 		byteKey = []byte(acc)
 
 		data types.Record
@@ -202,7 +209,7 @@ func (k Keeper) Get(ctx sdk.Context, acc sdk.AccAddress) *types.Record {
 func (k Keeper) GetAccumulation(ctx sdk.Context, acc sdk.AccAddress) (*types.AccumulationResponse, error) {
 	k.Logger(ctx).Debug("GetAccumulation", "acc", acc)
 	var (
-		store   = ctx.KVStore(k.mainStoreKey)
+		store   = k.recordStore(ctx)
 		byteKey = []byte(acc)
 
 		item types.Record

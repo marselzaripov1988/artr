@@ -20,7 +20,7 @@ func (k Keeper) MustPerformRevoking(ctx sdk.Context, payload []byte, _ time.Time
 
 func (k Keeper) performRevoking(ctx sdk.Context, acc sdk.AccAddress) error {
 	var (
-		mainStore = ctx.KVStore(k.mainStoreKey)
+		mainStore = k.recordStore(ctx)
 		byteKey   = []byte(acc)
 
 		byteItem []byte
@@ -64,7 +64,7 @@ func (k Keeper) performRevoking(ctx sdk.Context, acc sdk.AccAddress) error {
 func (k Keeper) MustPerformAccrue(ctx sdk.Context, payload []byte, time time.Time) {
 	var (
 		acc   sdk.AccAddress = payload
-		store                = ctx.KVStore(k.mainStoreKey)
+		store                = k.recordStore(ctx)
 		data  types.Record
 	)
 

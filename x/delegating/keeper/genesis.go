@@ -9,7 +9,7 @@ import (
 )
 
 func (k Keeper) InitAccounts(ctx sdk.Context, accounts []types.Account) {
-	store := ctx.KVStore(k.mainStoreKey)
+	store := k.recordStore(ctx)
 	for _, account := range accounts {
 		byteKey, err := sdk.AccAddressFromBech32(account.Address)
 		if err != nil {
@@ -28,7 +28,7 @@ func (k Keeper) InitAccounts(ctx sdk.Context, accounts []types.Account) {
 
 func (k Keeper) ExportAccounts(ctx sdk.Context) []types.Account {
 	var result []types.Account
-	store := ctx.KVStore(k.mainStoreKey)
+	store := k.recordStore(ctx)
 	it := store.Iterator(nil, nil)
 	defer it.Close()
 	for ; it.Valid(); it.Next() {
