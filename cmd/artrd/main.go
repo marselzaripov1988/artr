@@ -18,6 +18,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/keys"
 	"github.com/cosmos/cosmos-sdk/client/rpc"
+	cryptoCodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	cryptoTypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/server"
@@ -47,6 +48,14 @@ func main() {
 	ec := app.NewEncodingConfig()
 
 	app.ModuleBasics.RegisterInterfaces(ec.InterfaceRegistry)
+
+	// Регистрация всех криптотипов SDK, включая ed25519. Раньше здесь стоял
+	// только secp256k1, и на 0.42 это сходило с рук. В 0.45 команды вроде
+	// `tendermint show-validator` маршалят ключ через реестр интерфейсов, и
+	// консенсусный ключ валидатора (он ed25519) без этой регистрации падает
+	// с "unable to resolve type URL /cosmos.crypto.ed25519.PubKey".
+	cryptoCodec.RegisterInterfaces(ec.InterfaceRegistry)
+
 	ec.InterfaceRegistry.RegisterInterface("tendermint.crypto.PubKey", (*cryptoTypes.PubKey)(nil), &secp256k1.PubKey{})
 	ec.InterfaceRegistry.RegisterInterface("cosmos.tx.v1beta1.Tx", (*sdk.Tx)(nil), &tx.Tx{})
 
