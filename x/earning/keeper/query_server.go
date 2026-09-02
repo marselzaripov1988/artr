@@ -89,7 +89,7 @@ func (s QueryServer) List(ctx context.Context, req *types.ListRequest) (resp *ty
 		}
 	}()
 
-	store := sdkCtx.KVStore(k.storeKey)
+	store := k.earnerStore(sdkCtx)
 	iterator := store.Iterator(nil, nil)
 	defer iterator.Close()
 

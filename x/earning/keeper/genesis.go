@@ -8,7 +8,7 @@ import (
 
 func (k Keeper) GetEarners(ctx sdk.Context) []types.Earner {
 	var result []types.Earner
-	store := ctx.KVStore(k.storeKey)
+	store := k.earnerStore(ctx)
 	it := store.Iterator(nil, nil)
 	defer it.Close()
 	for ; it.Valid(); it.Next() {
@@ -24,7 +24,7 @@ func (k Keeper) GetEarners(ctx sdk.Context) []types.Earner {
 }
 
 func (k Keeper) SetEarners(ctx sdk.Context, earners []types.Earner) {
-	store := ctx.KVStore(k.storeKey)
+	store := k.earnerStore(ctx)
 	for _, earner := range earners {
 		timestamps := earner.GetTimestamps()
 		bz, err := k.cdc.Marshal(&timestamps)

@@ -6,6 +6,7 @@ import (
 	"github.com/cometbft/cometbft/libs/log"
 
 	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/store/prefix"
 	storeTypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -40,6 +41,13 @@ func NewKeeper(
 		scheduleKeeper: scheduleKeeper,
 	}
 	return keeper
+}
+
+// earnerStore возвращает часть стора модуля с записями получателей.
+// Параметры лежат в том же сторе под отдельным ключом, поэтому обходы
+// должны идти только по этому префиксу.
+func (k Keeper) earnerStore(ctx sdk.Context) prefix.Store {
+	return prefix.NewStore(ctx.KVStore(k.storeKey), types.EarnerPrefix)
 }
 
 // Logger returns a module-specific logger.
@@ -88,13 +96,13 @@ func (k Keeper) IsActiveEarner(ctx sdk.Context, accAddr sdk.AccAddress) (vpn boo
 //-----------------------------------------------------------------------------------------------------------
 
 func (k Keeper) has(ctx sdk.Context, key sdk.AccAddress) bool {
-	store := ctx.KVStore(k.storeKey)
+	store := k.earnerStore(ctx)
 	return store.Has([]byte(key))
 }
 
 // Get returns the pubkey from the adddress-pubkey relation
 func (k Keeper) get(ctx sdk.Context, key sdk.AccAddress) (*types.Timestamps, error) {
-	store := ctx.KVStore(k.storeKey)
+	store := k.earnerStore(ctx)
 	var item types.Timestamps
 	err := k.cdc.Unmarshal(store.Get([]byte(key)), &item)
 	if err != nil {
@@ -104,7 +112,7 @@ func (k Keeper) get(ctx sdk.Context, key sdk.AccAddress) (*types.Timestamps, err
 }
 
 func (k Keeper) set(ctx sdk.Context, key sdk.AccAddress, value types.Timestamps) error {
-	store := ctx.KVStore(k.storeKey)
+	store := k.earnerStore(ctx)
 	bz, err := k.cdc.Marshal(&value)
 	if err != nil {
 		return err
@@ -114,12 +122,12 @@ func (k Keeper) set(ctx sdk.Context, key sdk.AccAddress, value types.Timestamps)
 }
 
 func (k Keeper) delete(ctx sdk.Context, key sdk.AccAddress) {
-	store := ctx.KVStore(k.storeKey)
+	store := k.earnerStore(ctx)
 	store.Delete([]byte(key))
 }
 
 func (k Keeper) clear(ctx sdk.Context) {
-	store := ctx.KVStore(k.storeKey)
+	store := k.earnerStore(ctx)
 	var keys [][]byte
 	it := store.Iterator(nil, nil)
 	for ; it.Valid(); it.Next() {

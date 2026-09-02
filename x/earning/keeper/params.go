@@ -8,14 +8,18 @@ import (
 
 // GetParams returns the total set of earning parameters.
 func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
-	k.paramspace.GetParamSet(ctx, &params)
+	bz := ctx.KVStore(k.storeKey).Get(types.ParamsKey)
+	if bz == nil {
+		return types.Params{}
+	}
+	k.cdc.MustUnmarshal(bz, &params)
 	return params
 }
 
 // SetParams sets the earning parameters to the param space.
 func (k Keeper) SetParams(ctx sdk.Context, params types.Params) {
 	k.Logger(ctx).Debug("SetParams", "params", params)
-	k.paramspace.SetParamSet(ctx, &params)
+	ctx.KVStore(k.storeKey).Set(types.ParamsKey, k.cdc.MustMarshal(&params))
 }
 
 func (k Keeper) AddSigner(ctx sdk.Context, address sdk.AccAddress) {
