@@ -236,13 +236,15 @@ func (keeper BaseSendKeeper) BlockedAddr(addr sdk.AccAddress) bool {
 
 // GetParams returns the total set of bank parameters.
 func (k BaseSendKeeper) GetParams(ctx sdk.Context) (params types.Params) {
-	k.paramSpace.GetParamSet(ctx, &params)
+	if bz := ctx.KVStore(k.storeKey).Get(types.ParamsKey); bz != nil {
+		k.cdc.MustUnmarshal(bz, &params)
+	}
 	return params
 }
 
 // SetParams sets the total set of bank parameters.
 func (k BaseSendKeeper) SetParams(ctx sdk.Context, params types.Params) {
-	k.paramSpace.SetParamSet(ctx, &params)
+	ctx.KVStore(k.storeKey).Set(types.ParamsKey, k.cdc.MustMarshal(&params))
 }
 
 func (k BaseSendKeeper) AddBlockedSender(ctx sdk.Context, blockedSender sdk.AccAddress) {

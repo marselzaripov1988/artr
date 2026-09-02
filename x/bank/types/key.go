@@ -19,6 +19,11 @@ var (
 	BalancesPrefix      = []byte("balances")
 	SupplyKey           = []byte{0x00}
 	DenomMetadataPrefix = []byte{0x1}
+
+	// ParamsKey — параметры модуля, перенесённые из подпространства x/params.
+	// Значение 0x02 свободно: 0x00 занят предложением монет, 0x01 —
+	// метаданными деномов, балансы лежат под своим строковым префиксом.
+	ParamsKey = []byte{0x02}
 )
 
 // DenomMetadataKey returns the denomination metadata key.
