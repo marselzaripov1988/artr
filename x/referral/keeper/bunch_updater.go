@@ -104,7 +104,7 @@ func (bu *bunchUpdater) get(acc string) (types.Info, error) {
 		}
 	}
 	if valueBytes == nil {
-		store := bu.ctx.KVStore(bu.k.storeKey)
+		store := bu.k.infoStore(bu.ctx)
 		valueBytes = store.Get(keyBytes)
 	}
 	err := bu.k.cdc.Unmarshal(valueBytes, &value)
@@ -220,7 +220,7 @@ func (bu *bunchUpdater) addCallback(eventName string, acc string) {
 }
 
 func (bu *bunchUpdater) commit() error {
-	store := bu.ctx.KVStore(bu.k.storeKey)
+	store := bu.k.infoStore(bu.ctx)
 	for _, pair := range bu.data {
 		store.Set(pair.key, pair.value)
 	}

@@ -959,7 +959,7 @@ func (k Keeper) GetValidatorState(ctx sdk.Context, acc sdk.AccAddress) types.Val
 //----------------------------------------------------------------------------------
 
 func (k Keeper) has(ctx sdk.Context, acc sdk.AccAddress) bool {
-	return ctx.KVStore(k.dataStoreKey).Has(acc)
+	return k.infoStore(ctx).Has(acc)
 }
 
 func (k Keeper) Get(ctx sdk.Context, acc sdk.AccAddress) (types.Info, error) {
@@ -987,7 +987,7 @@ func (k Keeper) set(ctx sdk.Context, acc sdk.AccAddress, value types.Info) error
 
 func (k Keeper) update(ctx sdk.Context, acc sdk.AccAddress, callback func(d *types.Info) (save bool)) error {
 	var (
-		store    = ctx.KVStore(k.dataStoreKey)
+		store    = k.infoStore(ctx)
 		keyBytes = []byte(acc)
 		value    types.Info
 	)
