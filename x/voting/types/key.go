@@ -26,6 +26,10 @@ var (
 	KeyTotalAgreed      = []byte("total_agreed")
 	KeyTotalDisagreed   = []byte("total_disagreed")
 	KeyStartBlock       = []byte("start_block")
+	// KeyParams — параметры модуля, перенесённые из подпространства x/params.
+	// Ключ именованный, как и остальные: обходы стора идут только по явным
+	// префиксам, поэтому в выборки он не попадает.
+	KeyParams           = []byte("params")
 	KeyHistoryPrefix    = []byte("h")
 
 	KeyPollPrefix   = []byte("p/")
