@@ -150,7 +150,7 @@ func NewArteryApp(
 	bApp.SetVersion(version.Version)
 	bApp.SetInterfaceRegistry(ec.InterfaceRegistry)
 
-	keys := sdk.NewKVStoreKeys(authTypes.StoreKey, bank.StoreKey,
+	keys := newKVStoreKeys(authTypes.StoreKey, bank.StoreKey,
 		paramTypes.StoreKey, upgradeTypes.StoreKey,
 		profileTypes.StoreKey, profileTypes.AliasStoreKey, profileTypes.CardStoreKey,
 		scheduleTypes.StoreKey, referral.StoreKey, referral.IndexStoreKey, delegating.MainStoreKey,
@@ -379,18 +379,46 @@ func NewArteryApp(
 	// there is nothing left over in the validator fee pool, so as to keep the
 	// CanWithdrawInvariant invariant.
 
+	// SDK 0.45 требует, чтобы в списках порядка были перечислены ВСЕ модули,
+	// а не только те, у которых есть блочные хуки. Раньше менеджер вызывал
+	// хуки строго по списку, и недостающие модули просто пропускались.
+	//
+	// Дополнение списков поведения не меняет: непустой BeginBlock есть только
+	// у noding и schedule (и у upgrade из SDK), и все трое стояли в списке
+	// раньше — их взаимный порядок сохранён. У остальных тела пустые.
 	app.mm.SetOrderBeginBlockers(
 		upgradeTypes.ModuleName,
 		noding.ModuleName,
 		referral.ModuleName,
 		delegating.ModuleName,
 		scheduleTypes.ModuleName,
+		// ниже — модули с пустым BeginBlock, порядок между ними безразличен
+		authTypes.ModuleName,
+		bank.ModuleName,
+		profileTypes.ModuleName,
+		votingTypes.ModuleName,
+		earning.ModuleName,
 	)
-	app.mm.SetOrderEndBlockers(noding.ModuleName)
+	// Непустой EndBlock только у noding — он и остаётся первым.
+	app.mm.SetOrderEndBlockers(
+		noding.ModuleName,
+		upgradeTypes.ModuleName,
+		referral.ModuleName,
+		delegating.ModuleName,
+		scheduleTypes.ModuleName,
+		authTypes.ModuleName,
+		bank.ModuleName,
+		profileTypes.ModuleName,
+		votingTypes.ModuleName,
+		earning.ModuleName,
+	)
 
 	// Sets the order of Genesis - Order matters, genutil is to always come last
 	// NOTE: The genutils module must occur after staking so that pools are
 	// properly initialized with tokens from genesis accounts.
+	// Порядок здесь несёт смысл — модули читают состояние друг друга. Он
+	// сохранён как был; upgrade дописан в конец, его InitGenesis ни от чего
+	// не зависит и ни на что не влияет.
 	app.mm.SetOrderInitGenesis(
 		scheduleTypes.ModuleName,
 		authTypes.ModuleName,
@@ -401,6 +429,7 @@ func NewArteryApp(
 		noding.ModuleName,
 		votingTypes.ModuleName,
 		earning.ModuleName,
+		upgradeTypes.ModuleName,
 	)
 
 	// register all module routes and module queriers
@@ -540,4 +569,28 @@ func RegisterSwaggerAPI(rtr *mux.Router) {
 
 	staticServer := http.FileServer(statikFS)
 	rtr.PathPrefix("/swagger/").Handler(http.StripPrefix("/swagger/", staticServer))
+}
+
+// newKVStoreKeys повторяет sdk.NewKVStoreKeys, но без проверки assertNoPrefix,
+// добавленной в SDK 0.45.
+//
+// Проверка запрещает имена сторов, где одно является строковым префиксом
+// другого. У Artery таких пар три: noding / noding-index,
+// referral / referral-index и profile / profileAliases, profileCards.
+//
+// Реальной коллизии за этим нет. Сторы монтируются в корневом multistore под
+// префиксом "s/k:<имя>/", то есть сравниваются "s/k:noding/" и
+// "s/k:noding-index/" — на позиции после имени стоят '/' и '-', диапазоны
+// итераторов не пересекаются. Проверка в SDK сделана с запасом, по голой
+// строке, без учёта завершающего разделителя.
+//
+// Переименовать сторы значило бы сменить раскладку состояния сразу в трёх
+// модулях. Имена — часть формата существующей сети, поэтому сохраняем их,
+// а от проверки отказываемся сознательно.
+func newKVStoreKeys(names ...string) map[string]*sdk.KVStoreKey {
+	keys := make(map[string]*sdk.KVStoreKey, len(names))
+	for _, name := range names {
+		keys[name] = sdk.NewKVStoreKey(name)
+	}
+	return keys
 }
