@@ -29,3 +29,6 @@ client/docs/statik
 .claude/
 .vscode/
 launch.json
+
+# Vendored dependencies (см. devnet/README.md)
+vendor/
