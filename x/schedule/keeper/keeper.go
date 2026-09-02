@@ -12,6 +12,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store/cachekv"
+	"github.com/cosmos/cosmos-sdk/store/prefix"
 	storeTypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
@@ -38,6 +39,13 @@ func NewKeeper(cdc codec.BinaryCodec, key storeTypes.StoreKey, paramspace paramt
 	return keeper
 }
 
+// taskStore возвращает часть стора модуля с запланированными задачами.
+// Параметры лежат в том же сторе под отдельным ключом и в диапазонные
+// обходы попадать не должны.
+func (k Keeper) taskStore(ctx sdk.Context) prefix.Store {
+	return prefix.NewStore(ctx.KVStore(k.storeKey), types.TaskPrefix)
+}
+
 // Logger returns a module-specific logger.
 func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
@@ -50,7 +58,7 @@ func (k Keeper) AddHook(event string, hook func(ctx sdk.Context, data []byte, ti
 
 func (k Keeper) GetTasks(ctx sdk.Context, since, to time.Time) []types.Task {
 	var (
-		store   = ctx.KVStore(k.storeKey)
+		store   = k.taskStore(ctx)
 		items   []types.Task
 		sinceBz = Key(since)
 		toBz    = Key(to)
@@ -72,7 +80,7 @@ func (k Keeper) ScheduleTask(ctx sdk.Context, time time.Time, event string, data
 }
 func (k Keeper) scheduleTask(ctx sdk.Context, task types.Task) {
 	var (
-		store = ctx.KVStore(k.storeKey)
+		store = k.taskStore(ctx)
 		key   = Key(task.Time)
 		sch   types.Schedule
 	)
@@ -96,7 +104,7 @@ func (k Keeper) Delete(ctx sdk.Context, time time.Time, event string, payload []
 	})
 }
 func (k Keeper) delete(ctx sdk.Context, time time.Time, predicate func(types.Task) bool) {
-	store := ctx.KVStore(k.storeKey)
+	store := k.taskStore(ctx)
 	key := Key(time)
 	bz := store.Get(key)
 
@@ -124,7 +132,7 @@ func (k Keeper) delete(ctx sdk.Context, time time.Time, predicate func(types.Tas
 // PerformSchedule performs scheduled tasks for the block height. Tasks will be removed from the store when they are
 // complete.
 func (k Keeper) PerformSchedule(ctx sdk.Context) {
-	store := cachekv.NewStore(ctx.KVStore(k.storeKey))
+	store := cachekv.NewStore(k.taskStore(ctx))
 	terminator := Key(ctx.BlockTime().Add(time.Nanosecond))
 	it := store.Iterator(nil, terminator)
 

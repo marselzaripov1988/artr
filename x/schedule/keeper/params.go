@@ -7,10 +7,14 @@ import (
 )
 
 func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
-	k.paramspace.GetParamSet(ctx, &params)
+	bz := ctx.KVStore(k.storeKey).Get(types.ParamsKey)
+	if bz == nil {
+		return types.Params{}
+	}
+	k.cdc.MustUnmarshal(bz, &params)
 	return params
 }
 
 func (k Keeper) setParams(ctx sdk.Context, params types.Params) {
-	k.paramspace.SetParamSet(ctx, &params)
+	ctx.KVStore(k.storeKey).Set(types.ParamsKey, k.cdc.MustMarshal(&params))
 }

@@ -17,7 +17,7 @@ func (k Keeper) ExportGenesis(ctx sdk.Context) (types.Params, []types.Task) {
 	params := k.GetParams(ctx)
 
 	var tasks []types.Task
-	store := ctx.KVStore(k.storeKey)
+	store := k.taskStore(ctx)
 	it := store.Iterator(nil, nil)
 	defer it.Close()
 	for ; it.Valid(); it.Next() {

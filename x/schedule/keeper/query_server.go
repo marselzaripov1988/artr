@@ -24,7 +24,7 @@ func (qs QueryServer) All(ctx context.Context, req *types.AllRequest) (resp *typ
 
 	k := Keeper(qs)
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	store := sdkCtx.KVStore(k.storeKey)
+	store := k.taskStore(sdkCtx)
 	it := store.Iterator(nil, nil)
 	defer func() {
 		it.Close()
