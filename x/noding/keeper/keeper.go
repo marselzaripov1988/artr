@@ -16,6 +16,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	crypto "github.com/cosmos/cosmos-sdk/crypto/types"
+	"github.com/cosmos/cosmos-sdk/store/prefix"
 	storeTypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	legacybech32 "github.com/cosmos/cosmos-sdk/types/bech32/legacybech32"
@@ -68,6 +69,13 @@ func NewKeeper(
 var IdxPrefixNodeOperator = []byte{0x01}
 var IdxPrefixBlockProposer = []byte{0x02}
 var IdxPrefixLotteryQueue = []byte{0x03}
+
+// infoStore возвращает часть основного стора модуля с записями валидаторов.
+// Параметры лежат в том же сторе под отдельным ключом и в полные обходы
+// попадать не должны.
+func (k Keeper) infoStore(ctx sdk.Context) prefix.Store {
+	return prefix.NewStore(ctx.KVStore(k.dataStoreKey), types.InfoPrefix)
+}
 
 // Logger returns a module-specific logger.
 func (k Keeper) Logger(ctx sdk.Context) log.Logger {
@@ -335,7 +343,7 @@ func (k Keeper) OnStakeChanged(ctx sdk.Context, acc sdk.AccAddress) error {
 
 func (k Keeper) GatherValidatorUpdates(ctx sdk.Context) ([]abci.ValidatorUpdate, error) {
 	var (
-		store = ctx.KVStore(k.dataStoreKey)
+		store = k.infoStore(ctx)
 
 		result []abci.ValidatorUpdate
 		active []types.InfoWithAccount
@@ -525,7 +533,7 @@ func (k Keeper) GatherValidatorUpdates(ctx sdk.Context) ([]abci.ValidatorUpdate,
 // chosen for tendermint consensus, all of them.
 func (k Keeper) GetActiveValidators(ctx sdk.Context) ([]types.Validator, error) {
 	var result []types.Validator
-	store := ctx.KVStore(k.dataStoreKey)
+	store := k.infoStore(ctx)
 	proposed := k.GetBlocksProposedByAll(ctx)
 
 	it := store.Iterator(nil, nil)
@@ -548,7 +556,7 @@ func (k Keeper) GetActiveValidators(ctx sdk.Context) ([]types.Validator, error) 
 // GetActiveValidatorList is just like GetActiveValidators but returns sccount addresses only without any detail.
 func (k Keeper) GetActiveValidatorList(ctx sdk.Context) ([]sdk.AccAddress, error) {
 	var result []sdk.AccAddress
-	store := ctx.KVStore(k.dataStoreKey)
+	store := k.infoStore(ctx)
 	it := store.Iterator(nil, nil)
 	defer it.Close()
 	for ; it.Valid(); it.Next() {
@@ -568,7 +576,7 @@ func (k Keeper) GetActiveValidatorList(ctx sdk.Context) ([]sdk.AccAddress, error
 
 func (k Keeper) GetNonActiveValidators(ctx sdk.Context) ([]types.Validator, error) {
 	var result []types.Validator
-	store := ctx.KVStore(k.dataStoreKey)
+	store := k.infoStore(ctx)
 	proposed := k.GetBlocksProposedByAll(ctx)
 
 	it := store.Iterator(nil, nil)
@@ -903,7 +911,7 @@ func (k Keeper) GetBlocksProposedByAll(ctx sdk.Context) (heightsByAccAddress map
 }
 
 func (k Keeper) GeneralAmnesty(ctx sdk.Context) {
-	store := ctx.KVStore(k.dataStoreKey)
+	store := k.infoStore(ctx)
 	it := store.Iterator(nil, nil)
 	defer it.Close()
 	for ; it.Valid(); it.Next() {
@@ -955,7 +963,7 @@ func (k Keeper) has(ctx sdk.Context, acc sdk.AccAddress) bool {
 }
 
 func (k Keeper) Get(ctx sdk.Context, acc sdk.AccAddress) (types.Info, error) {
-	store := ctx.KVStore(k.dataStoreKey)
+	store := k.infoStore(ctx)
 	key := []byte(acc)
 	if !store.Has(key) {
 		return types.Info{}, types.ErrNotFound
@@ -966,7 +974,7 @@ func (k Keeper) Get(ctx sdk.Context, acc sdk.AccAddress) (types.Info, error) {
 }
 
 func (k Keeper) set(ctx sdk.Context, acc sdk.AccAddress, value types.Info) error {
-	store := ctx.KVStore(k.dataStoreKey)
+	store := k.infoStore(ctx)
 	keyBytes := []byte(acc)
 	valueBytes, err := proto.Marshal(&value)
 	if err != nil {
