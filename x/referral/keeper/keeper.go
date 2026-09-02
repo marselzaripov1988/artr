@@ -9,6 +9,7 @@ import (
 	"github.com/cometbft/cometbft/libs/log"
 
 	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/store/prefix"
 	storeTypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -60,6 +61,13 @@ func NewKeeper(
 
 func (k *Keeper) SetKeepers(nodingKeeper types.NodingKeeper) {
 	k.nodingKeeper = nodingKeeper
+}
+
+// infoStore возвращает часть основного стора модуля с записями дерева.
+// Параметры лежат в том же сторе под отдельным ключом и в полные обходы
+// попадать не должны.
+func (k Keeper) infoStore(ctx sdk.Context) prefix.Store {
+	return prefix.NewStore(ctx.KVStore(k.storeKey), types.InfoPrefix)
 }
 
 // Logger returns a module-specific logger.
@@ -183,7 +191,7 @@ func (k Keeper) AddTopLevelAccount(ctx sdk.Context, acc string) (err error) {
 
 // GetTopLevelAccounts returns all accounts without parents and is supposed to be used during genesis export
 func (k Keeper) GetTopLevelAndBanishedAccounts(ctx sdk.Context) (topLevel []string, banished []types.Banished, err error) {
-	store := ctx.KVStore(k.storeKey)
+	store := k.infoStore(ctx)
 	itr := store.Iterator(nil, nil)
 	defer itr.Close()
 	for ; itr.Valid(); itr.Next() {
@@ -657,7 +665,7 @@ func (k Keeper) MustSetActiveWithoutStatusUpdate(ctx sdk.Context, acc string, va
 
 func (k Keeper) Iterate(ctx sdk.Context, callback func(acc string, r *types.Info) (changed, checkForStatusUpdate bool)) {
 	bu := newBunchUpdater(k, ctx)
-	store := ctx.KVStore(k.storeKey)
+	store := k.infoStore(ctx)
 	it := store.Iterator(nil, nil)
 	defer func() {
 		if it != nil {
@@ -1079,7 +1087,7 @@ func (k Keeper) ComeBack(ctx sdk.Context, acc string) error {
 
 // Get returns all the data for an account (status, parent, children)
 func (k Keeper) Get(ctx sdk.Context, acc string) (types.Info, error) {
-	store := ctx.KVStore(k.storeKey)
+	store := k.infoStore(ctx)
 	var item types.Info
 	err := errors.Wrapf(
 		k.cdc.Unmarshal(store.Get([]byte(acc)), &item),
@@ -1149,7 +1157,7 @@ func (k Keeper) getReferralValidatorFeesCore(ctx sdk.Context, acc string, toVali
 }
 
 func (k Keeper) set(ctx sdk.Context, acc string, value types.Info) error {
-	store := ctx.KVStore(k.storeKey)
+	store := k.infoStore(ctx)
 	keyBytes := []byte(acc)
 	valueBytes, err := k.cdc.Marshal(&value)
 	if err != nil {
@@ -1161,7 +1169,7 @@ func (k Keeper) set(ctx sdk.Context, acc string, value types.Info) error {
 }
 
 func (k Keeper) update(ctx sdk.Context, acc string, callback func(value types.Info) types.Info) error {
-	store := ctx.KVStore(k.storeKey)
+	store := k.infoStore(ctx)
 	keyBytes := []byte(acc)
 	var value types.Info
 	err := k.cdc.Unmarshal(store.Get(keyBytes), &value)
@@ -1197,7 +1205,7 @@ func (k Keeper) getDelegated(ctx sdk.Context, acc string) sdk.Int {
 }
 
 func (k Keeper) exists(ctx sdk.Context, acc string) bool {
-	store := ctx.KVStore(k.storeKey)
+	store := k.infoStore(ctx)
 	keyBytes := []byte(acc)
 	return store.Has(keyBytes)
 }

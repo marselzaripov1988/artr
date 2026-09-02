@@ -109,7 +109,7 @@ func (k Keeper) ImportFromGenesis(
 	downgrades []types.Downgrade,
 	transitions []types.Transition,
 ) error {
-	store := ctx.KVStore(k.storeKey)
+	store := k.infoStore(ctx)
 
 	k.Logger(ctx).Info("... top level accounts")
 	for _, acc := range topLevel {
