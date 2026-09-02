@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/cosmos/gogoproto/proto"
 	"github.com/pkg/errors"
 
 	abci "github.com/cometbft/cometbft/abci/types"
@@ -80,8 +80,10 @@ func patchEvent(tev proto.Message) sdk.Event {
 		}
 
 		attrs = append(attrs, abci.EventAttribute{
-			Key:   []byte(k),
-			Value: v,
+			// В CometBFT 0.37 Key и Value у атрибута события — строки,
+			// а не байты, как было в Tendermint 0.34.
+			Key:   k,
+			Value: string(v),
 		})
 	}
 

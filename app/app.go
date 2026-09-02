@@ -14,10 +14,11 @@ import (
 	tmjson "github.com/cometbft/cometbft/libs/json"
 	"github.com/cometbft/cometbft/libs/log"
 	tmos "github.com/cometbft/cometbft/libs/os"
-	dbm "github.com/tendermint/tm-db"
+	dbm "github.com/cometbft/cometbft-db"
 
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
+	nodeService "github.com/cosmos/cosmos-sdk/client/grpc/node"
 	"github.com/cosmos/cosmos-sdk/client/grpc/tmservice"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codecTypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -26,7 +27,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/server/api"
 	config2 "github.com/cosmos/cosmos-sdk/server/config"
 	serverTypes "github.com/cosmos/cosmos-sdk/server/types"
-	"github.com/cosmos/cosmos-sdk/simapp"
 	storeTypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
@@ -36,6 +36,8 @@ import (
 	authKeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authTypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	consensusKeeper "github.com/cosmos/cosmos-sdk/x/consensus/keeper"
+	consensusTypes "github.com/cosmos/cosmos-sdk/x/consensus/types"
 	"github.com/cosmos/cosmos-sdk/x/params"
 	paramKeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
 	paramTypes "github.com/cosmos/cosmos-sdk/x/params/types"
@@ -118,7 +120,8 @@ type ArteryApp struct {
 	accountKeeper    authKeeper.AccountKeeper
 	bankKeeper       bank.Keeper
 	paramsKeeper     paramKeeper.Keeper
-	upgradeKeeper    upgradeKeeper.Keeper
+	upgradeKeeper    *upgradeKeeper.Keeper
+	consensusKeeper  consensusKeeper.Keeper
 	referralKeeper   *referral.Keeper
 	profileKeeper    profileKeeper.Keeper
 	scheduleKeeper   scheduleKeeper.Keeper
@@ -135,7 +138,6 @@ type ArteryApp struct {
 }
 
 // verify app interface at compile time
-// var _ simapp.App = (*ArteryApp)(nil)
 var _ serverTypes.Application = (*ArteryApp)(nil)
 
 // NewArteryApp is a constructor function for ArteryApp
@@ -154,7 +156,10 @@ func NewArteryApp(
 		profileTypes.StoreKey, profileTypes.AliasStoreKey, profileTypes.CardStoreKey,
 		scheduleTypes.StoreKey, referral.StoreKey, referral.IndexStoreKey, delegating.MainStoreKey,
 		votingTypes.StoreKey, noding.StoreKey, noding.IdxStoreKey,
-		earning.StoreKey)
+		earning.StoreKey,
+		// SDK 0.47 вынес параметры консенсуса в отдельный модуль x/consensus
+		// со своим стором.
+		consensusTypes.StoreKey)
 
 	tKeys := sdk.NewTransientStoreKeys(paramTypes.TStoreKey)
 
@@ -177,7 +182,15 @@ func NewArteryApp(
 		keys[paramTypes.StoreKey],
 		tKeys[paramTypes.TStoreKey],
 	)
-	bApp.SetParamStore(app.paramsKeeper.Subspace(bam.Paramspace).WithKeyTable(paramTypes.ConsensusParamsKeyTable()))
+	// С 0.47 параметры консенсуса живут в x/consensus, а не в подпространстве
+	// x/params. Право менять их отдано модулю upgrade: своего гова у Artery
+	// нет, а адрес модуля никому не принадлежит.
+	app.consensusKeeper = consensusKeeper.NewKeeper(
+		ec.Marshaler,
+		keys[consensusTypes.StoreKey],
+		authTypes.NewModuleAddress(upgradeTypes.ModuleName).String(),
+	)
+	bApp.SetParamStore(&app.consensusKeeper)
 	// Set specific subspaces
 	app.subspaces[authTypes.ModuleName] = app.paramsKeeper.Subspace(authTypes.ModuleName)
 	app.subspaces[bank.ModuleName] = app.paramsKeeper.Subspace(bank.DefaultParamspace)
@@ -207,7 +220,6 @@ func NewArteryApp(
 	app.accountKeeper = authKeeper.NewAccountKeeper(
 		ec.Marshaler,
 		keys[authTypes.StoreKey],
-		app.subspaces[authTypes.ModuleName],
 		authTypes.ProtoBaseAccount,
 		map[string][]string{
 			authTypes.FeeCollectorName:        {},
@@ -216,8 +228,9 @@ func NewArteryApp(
 			earningTypes.StorageCollectorName: {},
 			earningTypes.ModuleName:           {},
 		},
-		// SDK 0.46 требует bech32-префикс аккаунтов шестым аргументом.
+		// SDK 0.46 требует bech32-префикс аккаунтов; 0.47 добавил authority.
 		Bech32PrefixAccAddr,
+		authTypes.NewModuleAddress(upgradeTypes.ModuleName).String(),
 	)
 
 	// The BankKeeper allows you perform sdk.Coins interactions
@@ -358,7 +371,7 @@ func NewArteryApp(
 	// must be passed by reference here.
 	app.mm = module.NewManager(
 		schedule.NewAppModule(app.scheduleKeeper),
-		auth.NewAppModule(ec.Marshaler, app.accountKeeper, nil),
+		auth.NewAppModule(ec.Marshaler, app.accountKeeper, nil, nil),
 		bank.NewAppModule(app.bankKeeper, app.accountKeeper),
 		upgrade.NewAppModule(app.upgradeKeeper),
 		profile.NewAppModule(app.profileKeeper, app.accountKeeper),
@@ -438,8 +451,8 @@ func NewArteryApp(
 		upgradeTypes.ModuleName,
 	)
 
-	// register all module routes and module queriers
-	app.mm.RegisterRoutes(app.Router(), app.QueryRouter(), ec.Amino)
+	// Маршрутизация сообщений и запросов — только через сервисы:
+	// legacy-роутеры (Router/QueryRouter) в 0.47 удалены.
 	app.mm.RegisterServices(module.NewConfigurator(ec.Marshaler, app.MsgServiceRouter(), app.GRPCQueryRouter()))
 
 	// The initChainer handles translating the genesis.json file into initial state for the network
@@ -481,7 +494,10 @@ func NewArteryApp(
 
 func (app *ArteryApp) RegisterInterfaces(registry codecTypes.InterfaceRegistry) {
 	for _, am := range app.mm.Modules {
-		am.RegisterInterfaces(registry)
+		// С 0.47 Manager.Modules хранит interface{}, поэтому нужна проверка.
+		if basic, ok := am.(module.AppModuleBasic); ok {
+			basic.RegisterInterfaces(registry)
+		}
 	}
 	registry.RegisterInterface("tendermint.crypto.PubKey", (*cryptoTypes.PubKey)(nil), &secp256k1.PubKey{})
 }
@@ -496,7 +512,7 @@ func NewDefaultGenesisState(mrshl codec.JSONCodec) GenesisState {
 
 // InitChainer application update at chain initialization
 func (app *ArteryApp) InitChainer(ctx sdk.Context, req abci.RequestInitChain) abci.ResponseInitChain {
-	var genesisState simapp.GenesisState
+	var genesisState GenesisState
 
 	if err := tmjson.Unmarshal(req.AppStateBytes, &genesisState); err != nil {
 		panic(err)
@@ -557,6 +573,12 @@ func (app *ArteryApp) RegisterAPIRoutes(server *api.Server, apiConfig config2.AP
 
 func (app *ArteryApp) RegisterTxService(clientCtx client.Context) {
 	authtx.RegisterTxService(app.BaseApp.GRPCQueryRouter(), clientCtx, app.BaseApp.Simulate, app.ec.InterfaceRegistry)
+}
+
+// RegisterNodeService — требование интерфейса server/types.Application
+// начиная с SDK 0.47.
+func (app *ArteryApp) RegisterNodeService(clientCtx client.Context) {
+	nodeService.RegisterNodeService(clientCtx, app.GRPCQueryRouter())
 }
 
 func (app *ArteryApp) RegisterTendermintService(clientCtx client.Context) {

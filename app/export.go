@@ -13,6 +13,9 @@ import (
 // file.
 func (app *ArteryApp) ExportAppStateAndValidators(
 	forZeroHeight bool, jailWhiteList []string,
+	// SDK 0.47 добавил список модулей для выборочного экспорта. Artery
+	// выгружает состояние целиком, поэтому параметр не используется.
+	modulesToExport []string,
 ) (serverTypes.ExportedApp, error) {
 
 	// as if they could withdraw from the start of the next block

@@ -6,13 +6,11 @@ import (
 	"strconv"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 
 	tmCfg "github.com/cometbft/cometbft/config"
 	"github.com/cometbft/cometbft/libs/log"
-	dbm "github.com/tendermint/tm-db"
+	dbm "github.com/cometbft/cometbft-db"
 
-	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/config"
 	"github.com/cosmos/cosmos-sdk/client/debug"
@@ -25,8 +23,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/server"
 	serverCmd "github.com/cosmos/cosmos-sdk/server/cmd"
 	serverTypes "github.com/cosmos/cosmos-sdk/server/types"
-	pruningTypes "github.com/cosmos/cosmos-sdk/pruning/types"
-	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/tx"
 	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
@@ -117,19 +113,15 @@ func main() {
 
 func newApp(ec app.EncodingConfig) serverTypes.AppCreator {
 	return func(logger log.Logger, db dbm.DB, traceStore io.Writer, appOpts serverTypes.AppOptions) serverTypes.Application {
-		var cache sdk.MultiStorePersistentCache
-
-		if viper.GetBool(server.FlagInterBlockCache) {
-			cache = store.NewCommitKVStoreCacheManager()
-		}
-
+		// Настройки берутся штатным набором SDK из appOpts, а не из глобального
+		// viper: он в этом месте пуст, и часть значений молча терялась.
+		//
+		// Отдельно важен SetChainID: с 0.47 приложение сверяет свой chain-id
+		// с генезисом в InitChain и падает при расхождении. Без него был
+		// "invalid chain-id on InitChain; expected: , got: ...".
 		return app.NewArteryApp(
 			logger, db, traceStore, true, invCheckPeriod, ec,
-			baseapp.SetPruning(pruningTypes.NewPruningOptionsFromString(viper.GetString("pruning"))),
-			baseapp.SetMinGasPrices(viper.GetString(server.FlagMinGasPrices)),
-			baseapp.SetHaltHeight(viper.GetUint64(server.FlagHaltHeight)),
-			baseapp.SetHaltTime(viper.GetUint64(server.FlagHaltTime)),
-			baseapp.SetInterBlockCache(cache),
+			server.DefaultBaseappOptions(appOpts)...,
 		)
 	}
 }
@@ -138,6 +130,9 @@ func exportAppState(ec app.EncodingConfig) serverTypes.AppExporter {
 	return func(
 		logger log.Logger, db dbm.DB, traceStore io.Writer, height int64, forZeroHeight bool, jailWhiteList []string,
 		_ serverTypes.AppOptions,
+		// SDK 0.47 добавил последним аргументом список модулей для выборочного
+		// экспорта. Artery экспортирует состояние целиком, поэтому не используется.
+		modulesToExport []string,
 	) (serverTypes.ExportedApp, error) {
 
 		if height != -1 {
@@ -146,12 +141,12 @@ func exportAppState(ec app.EncodingConfig) serverTypes.AppExporter {
 			if err != nil {
 				return serverTypes.ExportedApp{}, err
 			}
-			return aApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
+			return aApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList, modulesToExport)
 		}
 
 		aApp := app.NewArteryApp(logger, db, traceStore, true, uint(1), ec)
 
-		return aApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
+		return aApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList, modulesToExport)
 	}
 }
 

@@ -27,7 +27,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	crypto "github.com/cosmos/cosmos-sdk/crypto/types"
-	"github.com/cosmos/cosmos-sdk/simapp"
 	storeTypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/kv"
@@ -110,7 +109,7 @@ func NewAppFromGenesis(genesis []byte) (app *ArteryApp, cleanup func(), ctx sdk.
 
 	var (
 		genesisDoc   tmtypes.GenesisDoc
-		genesisState simapp.GenesisState
+		genesisState GenesisState
 	)
 	if err := tmjson.Unmarshal(genesis, &genesisDoc); err != nil {
 		panic(err)
@@ -207,7 +206,7 @@ func (app ArteryApp) CheckExportImport(t *testing.T, time time.Time, storeKeys [
 	}()
 
 	app2 := NewArteryApp(logger, db, nil, true, 0, app.ec, fauxMerkleModeOpt)
-	var genesisState simapp.GenesisState
+	var genesisState GenesisState
 	if err := tmjson.Unmarshal(appState.AppState, &genesisState); err != nil {
 		panic(err)
 	}

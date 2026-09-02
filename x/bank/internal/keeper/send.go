@@ -34,6 +34,9 @@ type SendKeeper interface {
 
 	BlockedAddr(addr sdk.AccAddress) bool
 
+	// Требование интерфейса x/auth/types.BankKeeper начиная с SDK 0.47.
+	IsSendEnabledCoins(ctx sdk.Context, coins ...sdk.Coin) error
+
 	AddHook(event string, name string, hook func(ctx sdk.Context, addr sdk.AccAddress) error)
 }
 
@@ -201,6 +204,16 @@ func (keeper BaseSendKeeper) GetMinSend(ctx sdk.Context) int64 {
 // SetSendEnabled sets the send enabled
 func (keeper BaseSendKeeper) SetMinSend(ctx sdk.Context, minSend int64) {
 	keeper.paramSpace.Set(ctx, types.ParamStoreKeyMinSend, &minSend)
+}
+
+// IsSendEnabledCoins сообщает, разрешена ли отправка указанных монет.
+//
+// Требование интерфейса x/auth/types.BankKeeper начиная с SDK 0.47. У Artery
+// нет понятия денома, запрещённого к отправке: ограничения выражены иначе —
+// минимальной суммой перевода и чёрным списком адресов отправителей. Поэтому
+// здесь разрешено всё, а проверки выполняются в SendCoins.
+func (keeper BaseSendKeeper) IsSendEnabledCoins(ctx sdk.Context, coins ...sdk.Coin) error {
+	return nil
 }
 
 // BlockedSenderAddr checks if a given address is blacklisted (i.e restricted from
