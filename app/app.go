@@ -19,7 +19,6 @@ import (
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/grpc/tmservice"
-	"github.com/cosmos/cosmos-sdk/client/rpc"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codecTypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
@@ -28,8 +27,8 @@ import (
 	config2 "github.com/cosmos/cosmos-sdk/server/config"
 	serverTypes "github.com/cosmos/cosmos-sdk/server/types"
 	"github.com/cosmos/cosmos-sdk/simapp"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	storeTypes "github.com/cosmos/cosmos-sdk/store/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/cosmos/cosmos-sdk/x/auth"
@@ -178,7 +177,7 @@ func NewArteryApp(
 		keys[paramTypes.StoreKey],
 		tKeys[paramTypes.TStoreKey],
 	)
-	bApp.SetParamStore(app.paramsKeeper.Subspace(bam.Paramspace).WithKeyTable(paramKeeper.ConsensusParamsKeyTable()))
+	bApp.SetParamStore(app.paramsKeeper.Subspace(bam.Paramspace).WithKeyTable(paramTypes.ConsensusParamsKeyTable()))
 	// Set specific subspaces
 	app.subspaces[authTypes.ModuleName] = app.paramsKeeper.Subspace(authTypes.ModuleName)
 	app.subspaces[bank.ModuleName] = app.paramsKeeper.Subspace(bank.DefaultParamspace)
@@ -217,6 +216,8 @@ func NewArteryApp(
 			earningTypes.StorageCollectorName: {},
 			earningTypes.ModuleName:           {},
 		},
+		// SDK 0.46 требует bech32-префикс аккаунтов шестым аргументом.
+		Bech32PrefixAccAddr,
 	)
 
 	// The BankKeeper allows you perform sdk.Coins interactions
@@ -274,6 +275,11 @@ func NewArteryApp(
 		// SDK 0.43 добавил пятым аргументом ProtocolVersionSetter — через него
 		// модуль апгрейда проставляет версию протокола в BaseApp.
 		app.BaseApp,
+		// SDK 0.46 добавил authority — адрес, которому разрешён апгрейд
+		// сообщением MsgSoftwareUpgrade. У Artery апгрейды идут через x/voting,
+		// а не сообщением, поэтому ставим адрес самого модуля: он никому не
+		// принадлежит, и подставиться под него извне нельзя.
+		authTypes.NewModuleAddress(upgradeTypes.ModuleName).String(),
 	)
 
 	app.nodingKeeper = nodingKeeper.NewKeeper(
@@ -535,9 +541,8 @@ func GetMaccPerms() map[string][]string {
 
 func (app *ArteryApp) RegisterAPIRoutes(server *api.Server, apiConfig config2.APIConfig) {
 	clientCtx := server.ClientCtx
-	rpc.RegisterRoutes(clientCtx, server.Router)
-	// Register legacy tx routes.
-	// Register new tx routes from grpc-gateway.
+	// Маршруты tx через grpc-gateway. Legacy REST (rpc.RegisterRoutes)
+	// удалён из SDK в 0.46.
 	authtx.RegisterGRPCGatewayRoutes(clientCtx, server.GRPCGatewayRouter)
 	// Register new tendermint queries routes from grpc-gateway.
 	tmservice.RegisterGRPCGatewayRoutes(clientCtx, server.GRPCGatewayRouter)
@@ -555,7 +560,13 @@ func (app *ArteryApp) RegisterTxService(clientCtx client.Context) {
 }
 
 func (app *ArteryApp) RegisterTendermintService(clientCtx client.Context) {
-	tmservice.RegisterTendermintService(app.BaseApp.GRPCQueryRouter(), clientCtx, app.ec.InterfaceRegistry)
+	// В 0.46 порядок аргументов изменён и добавлена функция ABCI-запроса.
+	tmservice.RegisterTendermintService(
+		clientCtx,
+		app.BaseApp.GRPCQueryRouter(),
+		app.ec.InterfaceRegistry,
+		app.BaseApp.Query,
+	)
 }
 
 // RegisterSwaggerAPI registers swagger route with API Server

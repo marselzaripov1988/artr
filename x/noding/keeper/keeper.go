@@ -16,8 +16,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	crypto "github.com/cosmos/cosmos-sdk/crypto/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	storeTypes "github.com/cosmos/cosmos-sdk/store/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	legacybech32 "github.com/cosmos/cosmos-sdk/types/bech32/legacybech32"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 

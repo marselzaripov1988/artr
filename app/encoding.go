@@ -17,7 +17,7 @@ type EncodingConfig struct {
 
 func (conf EncodingConfig) BuildClientContext() client.Context {
 	return client.Context{}.
-		WithJSONCodec(conf.Marshaler).
+		WithCodec(conf.Marshaler).
 		WithInterfaceRegistry(conf.InterfaceRegistry).
 		WithTxConfig(conf.TxConfig).
 		WithLegacyAmino(conf.Amino).

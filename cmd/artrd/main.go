@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
+	tmCfg "github.com/tendermint/tendermint/config"
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 
@@ -24,8 +25,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/server"
 	serverCmd "github.com/cosmos/cosmos-sdk/server/cmd"
 	serverTypes "github.com/cosmos/cosmos-sdk/server/types"
+	pruningTypes "github.com/cosmos/cosmos-sdk/pruning/types"
 	"github.com/cosmos/cosmos-sdk/store"
-	"github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/tx"
 	authcmd "github.com/cosmos/cosmos-sdk/x/auth/client/cli"
@@ -84,7 +85,8 @@ func main() {
 			}
 
 			// Пустые шаблон и конфиг означают значения по умолчанию.
-			return server.InterceptConfigsPreRunHandler(cmd, "", nil)
+			// В 0.46 добавлен четвёртый аргумент — конфиг Tendermint.
+			return server.InterceptConfigsPreRunHandler(cmd, "", nil, tmCfg.DefaultConfig())
 		},
 	}
 
@@ -102,7 +104,7 @@ func main() {
 		config.Cmd(),
 	)
 
-	if err := serverCmd.Execute(rootCmd, app.DefaultNodeHome); err != nil {
+	if err := serverCmd.Execute(rootCmd, "ARTR", app.DefaultNodeHome); err != nil {
 		switch e := err.(type) {
 		case server.ErrorCode:
 			os.Exit(e.Code)
@@ -123,7 +125,7 @@ func newApp(ec app.EncodingConfig) serverTypes.AppCreator {
 
 		return app.NewArteryApp(
 			logger, db, traceStore, true, invCheckPeriod, ec,
-			baseapp.SetPruning(types.NewPruningOptionsFromString(viper.GetString("pruning"))),
+			baseapp.SetPruning(pruningTypes.NewPruningOptionsFromString(viper.GetString("pruning"))),
 			baseapp.SetMinGasPrices(viper.GetString(server.FlagMinGasPrices)),
 			baseapp.SetHaltHeight(viper.GetUint64(server.FlagHaltHeight)),
 			baseapp.SetHaltTime(viper.GetUint64(server.FlagHaltTime)),
