@@ -101,18 +101,8 @@ func (AppModule) Name() string {
 // RegisterInvariants registers the schedule module invariants.
 func (am AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
 
-// Route returns the message routing key for the schedule module.
-func (AppModule) Route() sdk.Route {
-	return sdk.NewRoute(types.RouterKey, nil)
-}
-
 // NewHandler returns an sdk.Handler for the schedule module.
 func (am AppModule) NewHandler() sdk.Handler { return nil }
-
-// QuerierRoute returns the schedule module's querier route name.
-func (AppModule) QuerierRoute() string {
-	return types.QuerierRoute
-}
 
 // InitGenesis performs genesis initialization for the schedule module. It returns
 // no validator updates.
@@ -139,11 +129,6 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 // updates.
 func (AppModule) EndBlock(_ sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
 	return []abci.ValidatorUpdate{}
-}
-
-// NewQuerierHandler returns the bank module sdk.Querier.
-func (am AppModule) LegacyQuerierHandler(legacyQuerierCdc *codec.LegacyAmino) sdk.Querier {
-	return keeper.NewQuerier(am.keeper, legacyQuerierCdc)
 }
 
 // RegisterServices registers module services.

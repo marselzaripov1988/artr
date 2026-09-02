@@ -120,21 +120,6 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 // RegisterInvariants registers the referral module invariants.
 func (am AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
 
-// Route returns the message routing key for the referral module.
-func (am AppModule) Route() sdk.Route {
-	return sdk.NewRoute(types.ModuleName, NewHandler(am.keeper))
-}
-
-// QuerierRoute returns the referral module's querier route name.
-func (AppModule) QuerierRoute() string {
-	return QuerierRoute
-}
-
-// LegacyQuerierHandler returns the referral module sdk.Querier.
-func (am AppModule) LegacyQuerierHandler(legacyQuerierCdc *codec.LegacyAmino) sdk.Querier {
-	return NewQuerier(am.keeper, legacyQuerierCdc)
-}
-
 // InitGenesis performs genesis initialization for the referral module. It returns
 // no validator updates.
 func (am AppModule) InitGenesis(ctx sdk.Context, mrshl codec.JSONCodec, data json.RawMessage) []abci.ValidatorUpdate {

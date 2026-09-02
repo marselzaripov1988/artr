@@ -8,8 +8,6 @@ import (
 )
 
 const (
-	QueryBalance      = keeper.QueryBalance
-	QueryParams       = keeper.QueryParams
 	ModuleName        = types.ModuleName
 	QuerierRoute      = types.QuerierRoute
 	RouterKey         = types.RouterKey
@@ -23,7 +21,6 @@ var (
 	NewBaseKeeper               = keeper.NewBaseKeeper
 	NewBaseSendKeeper           = keeper.NewBaseSendKeeper
 	NewBaseViewKeeper           = keeper.NewBaseViewKeeper
-	NewQuerier                  = keeper.NewQuerier
 	RegisterLegacyAminoCodec    = types.RegisterLegacyAminoCodec
 	ErrNoInputs                 = types.ErrNoInputs
 	ErrNoOutputs                = types.ErrNoOutputs

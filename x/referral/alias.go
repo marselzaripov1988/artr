@@ -35,7 +35,6 @@ const (
 var (
 	// functions aliases
 	NewKeeper           = keeper.NewKeeper
-	NewQuerier          = keeper.NewQuerier
 	NewGenesisState     = types.NewGenesisState
 	DefaultGenesisState = types.DefaultGenesisState
 	ValidateGenesis     = types.ValidateGenesis

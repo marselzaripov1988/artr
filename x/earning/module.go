@@ -111,21 +111,6 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 // RegisterInvariants registers the earning module invariants.
 func (am AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
 
-// Route returns the message routing key for the earning module.
-func (am AppModule) Route() sdk.Route {
-	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper))
-}
-
-// QuerierRoute returns the earning module's querier route name.
-func (AppModule) QuerierRoute() string {
-	return QuerierRoute
-}
-
-// NewQuerierHandler returns the earning module sdk.Querier.
-func (am AppModule) LegacyQuerierHandler(legacyQuerierCdc *codec.LegacyAmino) sdk.Querier {
-	return NewQuerier(am.keeper, legacyQuerierCdc)
-}
-
 // InitGenesis performs genesis initialization for the earning module. It returns
 // no validator updates.
 func (am AppModule) InitGenesis(ctx sdk.Context, mrshl codec.JSONCodec, data json.RawMessage) []abci.ValidatorUpdate {

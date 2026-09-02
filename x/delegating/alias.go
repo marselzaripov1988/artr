@@ -18,7 +18,6 @@ const (
 var (
 	// functions aliases
 	NewKeeper                = keeper.NewKeeper
-	NewQuerier               = keeper.NewQuerier
 	RegisterLegacyAminoCodec = types.RegisterLegacyAminoCodec
 	NewGenesisState          = types.NewGenesisState
 	DefaultGenesisState      = types.DefaultGenesisState

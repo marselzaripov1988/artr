@@ -110,21 +110,6 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 // RegisterInvariants registers the profile module invariants.
 func (am AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
 
-// Route returns the message routing key for the profile module.
-func (am AppModule) Route() sdk.Route {
-	return sdk.NewRoute(types.ModuleName, NewHandler(am.keeper))
-}
-
-// QuerierRoute returns the profile module's querier route name.
-func (AppModule) QuerierRoute() string {
-	return types.QuerierRoute
-}
-
-// LegacyQuerierHandler returns the profile module sdk.Querier.
-func (am AppModule) LegacyQuerierHandler(legacyQuerierCdc *codec.LegacyAmino) sdk.Querier {
-	return keeper.NewQuerier(am.keeper, legacyQuerierCdc)
-}
-
 // InitGenesis performs genesis initialization for the profile module. It returns
 // no validator updates.
 func (am AppModule) InitGenesis(ctx sdk.Context, mrshl codec.JSONCodec, data json.RawMessage) []abci.ValidatorUpdate {

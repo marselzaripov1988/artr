@@ -123,19 +123,6 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 // RegisterInvariants registers the voting module invariants.
 func (am AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
 
-// Route returns the message routing key for the voting module.
-func (am AppModule) Route() sdk.Route {
-	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper))
-}
-
-// QuerierRoute returns the voting module's querier route name.
-func (AppModule) QuerierRoute() string { return types.QuerierRoute }
-
-// NewQuerierHandler returns the voting module sdk.Querier.
-func (am AppModule) LegacyQuerierHandler(legacyQuerierCdc *codec.LegacyAmino) sdk.Querier {
-	return keeper.NewQuerier(am.keeper, legacyQuerierCdc)
-}
-
 // InitGenesis performs genesis initialization for the voting module. It returns
 // no validator updates.
 func (am AppModule) InitGenesis(ctx sdk.Context, mrshl codec.JSONCodec, data json.RawMessage) []abci.ValidatorUpdate {
