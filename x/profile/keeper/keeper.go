@@ -10,6 +10,7 @@ import (
 	"github.com/cometbft/cometbft/libs/log"
 
 	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/store/prefix"
 	storeTypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	auth "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -57,6 +58,12 @@ func NewKeeper(
 	return keeper
 }
 
+// profileStore возвращает часть основного стора модуля с профилями.
+// Параметры лежат в том же сторе под отдельным ключом.
+func (k Keeper) profileStore(ctx sdk.Context) prefix.Store {
+	return prefix.NewStore(ctx.KVStore(k.storeKey), types.ProfilePrefix)
+}
+
 // Logger returns a module-specific logger.
 func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
@@ -64,7 +71,7 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 
 // Get returns the pubkey from the adddress-pubkey relation
 func (k Keeper) GetProfile(ctx sdk.Context, addr sdk.AccAddress) *types.Profile {
-	store := ctx.KVStore(k.storeKey)
+	store := k.profileStore(ctx)
 
 	var item types.Profile
 
@@ -170,7 +177,7 @@ func (k Keeper) SetProfile(ctx sdk.Context, addr sdk.AccAddress, profile types.P
 		}
 	}
 
-	store := ctx.KVStore(k.storeKey)
+	store := k.profileStore(ctx)
 	bz, err := k.cdc.Marshal(&profile)
 	if err != nil {
 		panic(err)
@@ -236,7 +243,7 @@ func (k Keeper) SetStorageCurrent(ctx sdk.Context, addr sdk.AccAddress, value ui
 	}
 	profile.StorageCurrent = value
 
-	store := ctx.KVStore(k.storeKey)
+	store := k.profileStore(ctx)
 	bz, err := k.cdc.Marshal(profile)
 	if err != nil {
 		panic(err)
@@ -253,7 +260,7 @@ func (k Keeper) SetVpnCurrent(ctx sdk.Context, addr sdk.AccAddress, value uint64
 	}
 	profile.VpnCurrent = value
 
-	store := ctx.KVStore(k.storeKey)
+	store := k.profileStore(ctx)
 	bz, err := k.cdc.Marshal(profile)
 	if err != nil {
 		panic(err)

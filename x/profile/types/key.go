@@ -22,3 +22,16 @@ const (
 	RefreshHookName   = ModuleName + "/refresh"
 	RefreshImHookName = ModuleName + "/refresh-im"
 )
+
+// Префиксы ключей в основном сторе модуля.
+//
+// Профили адресуются адресом аккаунта, а экспорт генезиса обходит стор
+// целиком. После переноса параметров из подпространства x/params их
+// пространство ключей разведено с профилями.
+var (
+	// ParamsKey — параметры модуля.
+	ParamsKey = []byte{0x00}
+
+	// ProfilePrefix — профили по адресу аккаунта.
+	ProfilePrefix = []byte{0x01}
+)

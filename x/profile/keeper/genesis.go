@@ -13,7 +13,7 @@ import (
 
 func (k Keeper) ExportProfileRecords(ctx sdk.Context) []types.GenesisProfile {
 	var result []types.GenesisProfile
-	store := ctx.KVStore(k.storeKey)
+	store := k.profileStore(ctx)
 	it := store.Iterator(nil, nil)
 	defer it.Close()
 	for ; it.Valid(); it.Next() {
@@ -44,7 +44,7 @@ func (k Keeper) ImportProfileRecords(ctx sdk.Context, data []types.GenesisProfil
 		}
 		k.setProfileAccountByCardNumber(ctx, record.Profile.CardNumber, addr)
 
-		store := ctx.KVStore(k.storeKey)
+		store := k.profileStore(ctx)
 		bz, err := k.cdc.Marshal(&record.Profile)
 		if err != nil {
 			panic(err)

@@ -8,7 +8,9 @@ import (
 
 // GetParams returns the total set of subscription parameters.
 func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
-	k.paramspace.GetParamSet(ctx, &params)
+	if bz := ctx.KVStore(k.storeKey).Get(types.ParamsKey); bz != nil {
+		k.cdc.MustUnmarshal(bz, &params)
+	}
 	return params
 }
 
@@ -27,7 +29,7 @@ func (k Keeper) SetParams(ctx sdk.Context, params types.Params) {
 			}
 		}
 	}
-	k.paramspace.SetParamSet(ctx, &params)
+	ctx.KVStore(k.storeKey).Set(types.ParamsKey, k.cdc.MustMarshal(&params))
 }
 
 func (k Keeper) AddFreeCreator(ctx sdk.Context, creator sdk.AccAddress) {
