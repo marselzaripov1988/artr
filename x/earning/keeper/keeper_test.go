@@ -14,6 +14,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	storeTypes "github.com/cosmos/cosmos-sdk/store/types"
 	legacybech32 "github.com/cosmos/cosmos-sdk/types/bech32/legacybech32"
 	authK "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 
@@ -41,7 +42,7 @@ type Suite struct {
 	bk       bank.Keeper
 	pk       profileK.Keeper
 	rk       referral.Keeper
-	storeKey sdk.StoreKey
+	storeKey storeTypes.StoreKey
 
 	bbHeader abci.RequestBeginBlock
 }

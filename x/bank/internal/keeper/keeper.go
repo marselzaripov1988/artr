@@ -6,6 +6,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	storeTypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	paramTypes "github.com/cosmos/cosmos-sdk/x/params/types"
@@ -46,13 +47,13 @@ type BaseKeeper struct {
 
 	ak         types.AccountKeeper
 	cdc        codec.BinaryCodec
-	storeKey   sdk.StoreKey
+	storeKey   storeTypes.StoreKey
 	paramSpace paramTypes.Subspace
 }
 
 // NewBaseKeeper returns a new BaseKeeper
 func NewBaseKeeper(
-	cdc codec.BinaryCodec, storeKey sdk.StoreKey, ak types.AccountKeeper, paramSpace paramTypes.Subspace,
+	cdc codec.BinaryCodec, storeKey storeTypes.StoreKey, ak types.AccountKeeper, paramSpace paramTypes.Subspace,
 	blockedAddrs map[string]bool,
 ) BaseKeeper {
 	// set KeyTable if it has not already been set

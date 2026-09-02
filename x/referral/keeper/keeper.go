@@ -10,6 +10,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	storeTypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	auth "github.com/cosmos/cosmos-sdk/x/auth/types"
 
@@ -25,8 +26,8 @@ const (
 // Keeper of the referral store
 type Keeper struct {
 	cdc            codec.BinaryCodec
-	storeKey       sdk.StoreKey
-	indexStoreKey  sdk.StoreKey
+	storeKey       storeTypes.StoreKey
+	indexStoreKey  storeTypes.StoreKey
 	paramspace     types.ParamSubspace
 	accKeeper      types.AccountKeeper
 	scheduleKeeper types.ScheduleKeeper
@@ -38,7 +39,7 @@ type Keeper struct {
 
 // NewKeeper creates a referral keeper
 func NewKeeper(
-	cdc codec.BinaryCodec, key sdk.StoreKey, idxKey sdk.StoreKey, paramspace types.ParamSubspace,
+	cdc codec.BinaryCodec, key storeTypes.StoreKey, idxKey storeTypes.StoreKey, paramspace types.ParamSubspace,
 	accKeeper types.AccountKeeper, scheduleKeeper types.ScheduleKeeper, bankKeeper types.BankKeeper,
 	supplyKeeper types.SupplyKeeper,
 ) *Keeper {

@@ -12,6 +12,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/testutil/testdata"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	storeTypes "github.com/cosmos/cosmos-sdk/store/types"
 	authK "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 
 	"github.com/arterynetwork/artr/app"
@@ -39,12 +40,12 @@ type VASuite struct {
 	k        referral.Keeper
 	ak       authK.AccountKeeper
 	bk       bank.Keeper
-	storeKey sdk.StoreKey
+	storeKey storeTypes.StoreKey
 
 	pk            profileK.Keeper
 	dk            delegatingK.Keeper
 	nk            nodingK.Keeper
-	indexStoreKey sdk.StoreKey
+	indexStoreKey storeTypes.StoreKey
 }
 
 func (s *VASuite) SetupTest() {

@@ -35,7 +35,7 @@ func (supply *Supply) Inflate(amount sdk.Coins) {
 
 // Deflate subtracts coins from the total supply.
 func (supply *Supply) Deflate(amount sdk.Coins) {
-	supply.Total = sdk.Coins(supply.Total).Sub(amount)
+	supply.Total = sdk.Coins(supply.Total).Sub(amount...)
 }
 
 // String returns a human readable string representation of a supplier.

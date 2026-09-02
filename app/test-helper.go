@@ -28,6 +28,7 @@ import (
 	crypto "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/simapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	storeTypes "github.com/cosmos/cosmos-sdk/store/types"
 	"github.com/cosmos/cosmos-sdk/types/kv"
 	authKeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	paramKeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
@@ -53,8 +54,8 @@ func init() {
 const verbose = false
 const printGenesis = false
 
-func (app ArteryApp) GetKeys() map[string]*sdk.KVStoreKey                 { return app.keys }
-func (app ArteryApp) GetTransientKeys() map[string]*sdk.TransientStoreKey { return app.tKeys }
+func (app ArteryApp) GetKeys() map[string]*storeTypes.KVStoreKey                 { return app.keys }
+func (app ArteryApp) GetTransientKeys() map[string]*storeTypes.TransientStoreKey { return app.tKeys }
 func (app ArteryApp) GetSubspaces() map[string]params.Subspace            { return app.subspaces }
 
 func (app ArteryApp) GetAccountKeeper() authKeeper.AccountKeeper { return app.accountKeeper }

@@ -13,6 +13,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store/cachekv"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	storeTypes "github.com/cosmos/cosmos-sdk/store/types"
 	paramtypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
 	"github.com/arterynetwork/artr/x/schedule/types"
@@ -20,14 +21,14 @@ import (
 
 // Keeper of the schedule store
 type Keeper struct {
-	storeKey   sdk.StoreKey
+	storeKey   storeTypes.StoreKey
 	cdc        codec.BinaryCodec
 	eventHooks map[string]func(ctx sdk.Context, data []byte, time time.Time)
 	paramspace paramtypes.Subspace
 }
 
 // NewKeeper creates a schedule keeper
-func NewKeeper(cdc codec.BinaryCodec, key sdk.StoreKey, paramspace paramtypes.Subspace) Keeper {
+func NewKeeper(cdc codec.BinaryCodec, key storeTypes.StoreKey, paramspace paramtypes.Subspace) Keeper {
 	keeper := Keeper{
 		storeKey:   key,
 		cdc:        cdc,

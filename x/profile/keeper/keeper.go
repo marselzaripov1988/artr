@@ -11,6 +11,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	storeTypes "github.com/cosmos/cosmos-sdk/store/types"
 	auth "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	"github.com/arterynetwork/artr/util"
@@ -20,9 +21,9 @@ import (
 // Keeper of the profile store
 type Keeper struct {
 	cdc            codec.BinaryCodec
-	storeKey       sdk.StoreKey
-	aliasStoreKey  sdk.StoreKey
-	cardsStoreKey  sdk.StoreKey
+	storeKey       storeTypes.StoreKey
+	aliasStoreKey  storeTypes.StoreKey
+	cardsStoreKey  storeTypes.StoreKey
 	paramspace     types.ParamSubspace
 	accountKeeper  types.AccountKeeper
 	bankKeeper     types.BankKeeper
@@ -33,9 +34,9 @@ type Keeper struct {
 // NewKeeper creates a profile keeper
 func NewKeeper(
 	cdc codec.BinaryCodec,
-	key sdk.StoreKey,
-	aliasKey sdk.StoreKey,
-	cardsKey sdk.StoreKey,
+	key storeTypes.StoreKey,
+	aliasKey storeTypes.StoreKey,
+	cardsKey storeTypes.StoreKey,
 	paramspace types.ParamSubspace,
 	accountKeeper types.AccountKeeper,
 	bankKeeper types.BankKeeper,

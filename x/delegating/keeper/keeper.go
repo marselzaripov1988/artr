@@ -9,6 +9,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	storeTypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/arterynetwork/artr/util"
@@ -18,7 +19,7 @@ import (
 
 // Keeper of the delegating store
 type Keeper struct {
-	mainStoreKey   sdk.StoreKey
+	mainStoreKey   storeTypes.StoreKey
 	cdc            codec.BinaryCodec
 	paramspace     types.ParamSubspace
 	accKeeper      types.AccountKeeper
@@ -32,7 +33,7 @@ type Keeper struct {
 
 // NewKeeper creates a delegating keeper
 func NewKeeper(
-	cdc codec.BinaryCodec, mainKey sdk.StoreKey, paramspace types.ParamSubspace,
+	cdc codec.BinaryCodec, mainKey storeTypes.StoreKey, paramspace types.ParamSubspace,
 	accountKeeper types.AccountKeeper, scheduleKeeper types.ScheduleKeeper, profileKeeper types.ProfileKeeper,
 	bankKeeper types.BankKeeper, refKeeper types.ReferralKeeper,
 ) *Keeper {
@@ -373,7 +374,7 @@ func (k Keeper) accrue(ctx sdk.Context, acc sdk.AccAddress, ucoins sdk.Int, bonu
 	if !fee.IsZero() {
 		ucoins = ucoins.Sub(fee)
 		fee := sdk.NewCoins(sdk.NewCoin(util.ConfigMainDenom, fee))
-		emission = emission.Sub(fee)
+		emission = emission.Sub(fee...)
 
 		if err := k.bankKeeper.AddCoins(ctx, k.accKeeper.GetModuleAddress(util.SplittableFeeCollectorName), fee); err != nil {
 			panic(errors.Wrap(err, "cannot collect fee"))

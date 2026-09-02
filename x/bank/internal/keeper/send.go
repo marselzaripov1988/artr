@@ -5,6 +5,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	storeTypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	paramTypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
@@ -45,7 +46,7 @@ type BaseSendKeeper struct {
 
 	cdc        codec.BinaryCodec
 	ak         types.AccountKeeper
-	storeKey   sdk.StoreKey
+	storeKey   storeTypes.StoreKey
 	paramSpace paramTypes.Subspace
 
 	// list of addresses that are restricted from receiving transactions
@@ -56,7 +57,7 @@ type BaseSendKeeper struct {
 }
 
 func NewBaseSendKeeper(
-	cdc codec.BinaryCodec, storeKey sdk.StoreKey, ak types.AccountKeeper, paramSpace paramTypes.Subspace, blockedAddrs map[string]bool,
+	cdc codec.BinaryCodec, storeKey storeTypes.StoreKey, ak types.AccountKeeper, paramSpace paramTypes.Subspace, blockedAddrs map[string]bool,
 ) BaseSendKeeper {
 
 	return BaseSendKeeper{
@@ -125,12 +126,12 @@ func (k BaseSendKeeper) SubtractCoins(ctx sdk.Context, addr sdk.AccAddress, amt 
 	balance := k.GetBalance(ctx, addr)
 	spendable := k.SpendableCoins(ctx, addr)
 
-	_, hasNeg := spendable.SafeSub(amt)
+	_, hasNeg := spendable.SafeSub(amt...)
 	if hasNeg {
 		return sdkerrors.Wrapf(sdkerrors.ErrInsufficientFunds, "%s is smaller than %s", spendable, amt)
 	}
 
-	return errors.Wrap(k.SetBalance(ctx, addr, sdk.NewCoins(balance.Sub(amt)...)), "cannot set balance")
+	return errors.Wrap(k.SetBalance(ctx, addr, sdk.NewCoins(balance.Sub(amt...)...)), "cannot set balance")
 }
 
 // AddCoins adds amt to the coins at the addr.

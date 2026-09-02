@@ -17,6 +17,7 @@ import (
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	crypto "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	storeTypes "github.com/cosmos/cosmos-sdk/store/types"
 	legacybech32 "github.com/cosmos/cosmos-sdk/types/bech32/legacybech32"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -27,8 +28,8 @@ import (
 
 // Keeper of the noding store
 type Keeper struct {
-	dataStoreKey               sdk.StoreKey
-	indexStoreKey              sdk.StoreKey
+	dataStoreKey               storeTypes.StoreKey
+	indexStoreKey              storeTypes.StoreKey
 	cdc                        codec.BinaryCodec
 	referralKeeper             types.ReferralKeeper
 	accountKeeper              types.AccountKeeper
@@ -41,8 +42,8 @@ type Keeper struct {
 // NewKeeper creates a noding keeper
 func NewKeeper(
 	cdc codec.BinaryCodec,
-	dataKey sdk.StoreKey,
-	indexKey sdk.StoreKey,
+	dataKey storeTypes.StoreKey,
+	indexKey storeTypes.StoreKey,
 	referralKeeper types.ReferralKeeper,
 	accountKeeper types.AccountKeeper,
 	bankKeeper types.BankKeeper,

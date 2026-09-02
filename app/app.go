@@ -29,6 +29,7 @@ import (
 	serverTypes "github.com/cosmos/cosmos-sdk/server/types"
 	"github.com/cosmos/cosmos-sdk/simapp"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	storeTypes "github.com/cosmos/cosmos-sdk/store/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/cosmos/cosmos-sdk/x/auth"
@@ -108,8 +109,8 @@ type ArteryApp struct {
 	invCheckPeriod uint
 
 	// keys to access the substores
-	keys  map[string]*sdk.KVStoreKey
-	tKeys map[string]*sdk.TransientStoreKey
+	keys  map[string]*storeTypes.KVStoreKey
+	tKeys map[string]*storeTypes.TransientStoreKey
 
 	// subspaces
 	subspaces map[string]paramTypes.Subspace
@@ -584,8 +585,8 @@ func RegisterSwaggerAPI(rtr *mux.Router) {
 // Переименовать сторы значило бы сменить раскладку состояния сразу в трёх
 // модулях. Имена — часть формата существующей сети, поэтому сохраняем их,
 // а от проверки отказываемся сознательно.
-func newKVStoreKeys(names ...string) map[string]*sdk.KVStoreKey {
-	keys := make(map[string]*sdk.KVStoreKey, len(names))
+func newKVStoreKeys(names ...string) map[string]*storeTypes.KVStoreKey {
+	keys := make(map[string]*storeTypes.KVStoreKey, len(names))
 	for _, name := range names {
 		keys[name] = sdk.NewKVStoreKey(name)
 	}

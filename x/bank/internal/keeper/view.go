@@ -10,6 +10,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	storeTypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/arterynetwork/artr/x/bank/types"
@@ -32,12 +33,12 @@ type ViewKeeper interface {
 // BaseViewKeeper implements a read only keeper implementation of ViewKeeper.
 type BaseViewKeeper struct {
 	cdc      codec.BinaryCodec
-	storeKey sdk.StoreKey
+	storeKey storeTypes.StoreKey
 	ak       types.AccountKeeper
 }
 
 // NewBaseViewKeeper returns a new BaseViewKeeper.
-func NewBaseViewKeeper(cdc codec.BinaryCodec, storeKey sdk.StoreKey, ak types.AccountKeeper) BaseViewKeeper {
+func NewBaseViewKeeper(cdc codec.BinaryCodec, storeKey storeTypes.StoreKey, ak types.AccountKeeper) BaseViewKeeper {
 	return BaseViewKeeper{
 		cdc:      cdc,
 		storeKey: storeKey,

@@ -7,6 +7,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	storeTypes "github.com/cosmos/cosmos-sdk/store/types"
 
 	"github.com/arterynetwork/artr/x/earning/types"
 )
@@ -14,7 +15,7 @@ import (
 // Keeper of the earning store
 type Keeper struct {
 	cdc            codec.BinaryCodec
-	storeKey       sdk.StoreKey
+	storeKey       storeTypes.StoreKey
 	paramspace     types.ParamSubspace
 	accountKeeper  types.AccountKeeper
 	bankKeeper     types.BankKeeper
@@ -24,7 +25,7 @@ type Keeper struct {
 // NewKeeper creates a earning keeper
 func NewKeeper(
 	cdc codec.BinaryCodec,
-	key sdk.StoreKey,
+	key storeTypes.StoreKey,
 	paramspace types.ParamSubspace,
 	accountKeeper types.AccountKeeper,
 	bankKeeper types.BankKeeper,

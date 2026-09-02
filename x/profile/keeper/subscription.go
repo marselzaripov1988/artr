@@ -163,7 +163,7 @@ func (k Keeper) BuyStorage(ctx sdk.Context, addr sdk.AccAddress, extraGb uint32)
 		k.Logger(ctx).Error(err.Error())
 		return errors.Wrap(err, "cannot pay up tx fee")
 	} else {
-		total = total.Sub(txFee)
+		total = total.Sub(txFee...)
 	}
 
 	companyCollectorAcc := k.referralKeeper.GetParams(ctx).CompanyAccounts.GetForSubscription()
@@ -216,7 +216,7 @@ func (k Keeper) BuyImStorage(ctx sdk.Context, addr sdk.AccAddress, extraGb uint3
 		k.Logger(ctx).Error(err.Error())
 		return errors.Wrap(err, "cannot pay up tx fee")
 	} else {
-		total = total.Sub(txFee)
+		total = total.Sub(txFee...)
 	}
 
 	companyCollectorAcc := k.referralKeeper.GetParams(ctx).CompanyAccounts.GetForSubscription()
@@ -267,7 +267,7 @@ func (k Keeper) BuyVpn(ctx sdk.Context, addr sdk.AccAddress, vpnGb uint32) error
 		k.Logger(ctx).Error(err.Error())
 		return errors.Wrap(err, "cannot pay up tx fee")
 	} else {
-		coins = coins.Sub(txFee)
+		coins = coins.Sub(txFee...)
 	}
 
 	companyCollectorAcc := k.referralKeeper.GetParams(ctx).CompanyAccounts.GetForSubscription()
@@ -492,7 +492,7 @@ func (k Keeper) prolongImExtra(ctx sdk.Context, addr sdk.AccAddress, profile *ty
 		k.Logger(ctx).Error(err.Error())
 		return errors.Wrap(err, "cannot pay up tx fee")
 	} else {
-		total = total.Sub(txFee)
+		total = total.Sub(txFee...)
 	}
 
 	companyCollectorAcc := k.referralKeeper.GetParams(ctx).CompanyAccounts.GetForSubscription()

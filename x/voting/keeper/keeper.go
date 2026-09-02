@@ -15,6 +15,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/store/cachekv"
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	storeTypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	upgrade "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
@@ -24,7 +25,7 @@ import (
 
 // Keeper of the voting store
 type Keeper struct {
-	storeKey         sdk.StoreKey
+	storeKey         storeTypes.StoreKey
 	cdc              codec.BinaryCodec
 	paramspace       types.ParamSubspace
 	scheduleKeeper   types.ScheduleKeeper
@@ -39,7 +40,7 @@ type Keeper struct {
 
 // NewKeeper creates a voting keeper
 func NewKeeper(
-	cdc codec.BinaryCodec, key sdk.StoreKey, paramspace types.ParamSubspace,
+	cdc codec.BinaryCodec, key storeTypes.StoreKey, paramspace types.ParamSubspace,
 	scheduleKeeper types.ScheduleKeeper,
 	upgradeKeeper types.UprgadeKeeper,
 	nodingKeeper types.NodingKeeper,
