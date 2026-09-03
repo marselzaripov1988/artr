@@ -46,10 +46,13 @@ func ValidateGenesis(data GenesisState) error {
 		if data.StartBlock != 0 {
 			return errors.New("invalid start_block: must be zero unless current_proposal is set")
 		}
-		if data.Agreed != nil {
+		// Сравнивать с nil нельзя: пустой массив в JSON разбирается в
+		// непустой слайс нулевой длины, и выгрузка собственной сети
+		// ("agreed": []) собственную же проверку не проходит.
+		if len(data.Agreed) != 0 {
 			return errors.New("invalid agreed: must be empty unless current_proposal is set")
 		}
-		if data.Disagreed != nil {
+		if len(data.Disagreed) != 0 {
 			return errors.New("invalid disagreed: must be empty unless current_proposal is set")
 		}
 	} else {
