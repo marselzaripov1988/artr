@@ -25,7 +25,6 @@ type Keeper struct {
 	storeKey       storeTypes.StoreKey
 	aliasStoreKey  storeTypes.StoreKey
 	cardsStoreKey  storeTypes.StoreKey
-	paramspace     types.ParamSubspace
 	accountKeeper  types.AccountKeeper
 	bankKeeper     types.BankKeeper
 	referralKeeper types.ReferralKeeper
@@ -38,7 +37,6 @@ func NewKeeper(
 	key storeTypes.StoreKey,
 	aliasKey storeTypes.StoreKey,
 	cardsKey storeTypes.StoreKey,
-	paramspace types.ParamSubspace,
 	accountKeeper types.AccountKeeper,
 	bankKeeper types.BankKeeper,
 	referralKeeper types.ReferralKeeper,
@@ -49,7 +47,6 @@ func NewKeeper(
 		storeKey:       key,
 		aliasStoreKey:  aliasKey,
 		cardsStoreKey:  cardsKey,
-		paramspace:     paramspace.WithKeyTable(types.ParamKeyTable()),
 		accountKeeper:  accountKeeper,
 		bankKeeper:     bankKeeper,
 		referralKeeper: referralKeeper,
@@ -62,6 +59,14 @@ func NewKeeper(
 // Параметры лежат в том же сторе под отдельным ключом.
 func (k Keeper) profileStore(ctx sdk.Context) prefix.Store {
 	return prefix.NewStore(ctx.KVStore(k.storeKey), types.ProfilePrefix)
+}
+
+// MarkIndexStores помечает сторы псевдонимов и карт как
+// инициализированные. Оба пусты, пока профили их не заводят, а пустое
+// дерево ломает запросы состояния — см. util.MarkStoreInitialized.
+func (k Keeper) MarkIndexStores(ctx sdk.Context) {
+	util.MarkStoreInitialized(ctx.KVStore(k.aliasStoreKey))
+	util.MarkStoreInitialized(ctx.KVStore(k.cardsStoreKey))
 }
 
 // Logger returns a module-specific logger.

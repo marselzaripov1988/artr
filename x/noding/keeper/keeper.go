@@ -35,7 +35,6 @@ type Keeper struct {
 	referralKeeper             types.ReferralKeeper
 	accountKeeper              types.AccountKeeper
 	bankKeeper                 types.BankKeeper
-	paramspace                 types.ParamSubspace
 	feeCollectorName           string
 	splittableFeeCollectorName string
 }
@@ -48,7 +47,6 @@ func NewKeeper(
 	referralKeeper types.ReferralKeeper,
 	accountKeeper types.AccountKeeper,
 	bankKeeper types.BankKeeper,
-	paramspace types.ParamSubspace,
 	feeCollectorName string,
 	splittableFeeCollectorName string,
 ) Keeper {
@@ -59,7 +57,6 @@ func NewKeeper(
 		referralKeeper:             referralKeeper,
 		accountKeeper:              accountKeeper,
 		bankKeeper:                 bankKeeper,
-		paramspace:                 paramspace.WithKeyTable(types.ParamKeyTable()),
 		feeCollectorName:           feeCollectorName,
 		splittableFeeCollectorName: splittableFeeCollectorName,
 	}
@@ -75,6 +72,12 @@ var IdxPrefixLotteryQueue = []byte{0x03}
 // попадать не должны.
 func (k Keeper) infoStore(ctx sdk.Context) prefix.Store {
 	return prefix.NewStore(ctx.KVStore(k.dataStoreKey), types.InfoPrefix)
+}
+
+// MarkIndexStore помечает индексный стор как инициализированный.
+// См. util.MarkStoreInitialized.
+func (k Keeper) MarkIndexStore(ctx sdk.Context) {
+	util.MarkStoreInitialized(ctx.KVStore(k.indexStoreKey))
 }
 
 // Logger returns a module-specific logger.

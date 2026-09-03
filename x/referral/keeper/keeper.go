@@ -29,7 +29,6 @@ type Keeper struct {
 	cdc            codec.BinaryCodec
 	storeKey       storeTypes.StoreKey
 	indexStoreKey  storeTypes.StoreKey
-	paramspace     types.ParamSubspace
 	accKeeper      types.AccountKeeper
 	scheduleKeeper types.ScheduleKeeper
 	bankKeeper     types.BankKeeper
@@ -40,7 +39,7 @@ type Keeper struct {
 
 // NewKeeper creates a referral keeper
 func NewKeeper(
-	cdc codec.BinaryCodec, key storeTypes.StoreKey, idxKey storeTypes.StoreKey, paramspace types.ParamSubspace,
+	cdc codec.BinaryCodec, key storeTypes.StoreKey, idxKey storeTypes.StoreKey,
 	accKeeper types.AccountKeeper, scheduleKeeper types.ScheduleKeeper, bankKeeper types.BankKeeper,
 	supplyKeeper types.SupplyKeeper,
 ) *Keeper {
@@ -48,7 +47,6 @@ func NewKeeper(
 		cdc:            cdc,
 		storeKey:       key,
 		indexStoreKey:  idxKey,
-		paramspace:     paramspace.WithKeyTable(types.ParamKeyTable()),
 		accKeeper:      accKeeper,
 		scheduleKeeper: scheduleKeeper,
 		bankKeeper:     bankKeeper,
@@ -68,6 +66,13 @@ func (k *Keeper) SetKeepers(nodingKeeper types.NodingKeeper) {
 // попадать не должны.
 func (k Keeper) infoStore(ctx sdk.Context) prefix.Store {
 	return prefix.NewStore(ctx.KVStore(k.storeKey), types.InfoPrefix)
+}
+
+// MarkIndexStore помечает индексный стор как инициализированный.
+// Он пуст, пока в сети нет аккаунтов со статусом от Businessman, а пустое
+// дерево ломает запросы состояния — см. util.MarkStoreInitialized.
+func (k Keeper) MarkIndexStore(ctx sdk.Context) {
+	util.MarkStoreInitialized(ctx.KVStore(k.indexStoreKey))
 }
 
 // Logger returns a module-specific logger.

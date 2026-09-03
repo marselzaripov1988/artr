@@ -22,7 +22,6 @@ import (
 type Keeper struct {
 	mainStoreKey   storeTypes.StoreKey
 	cdc            codec.BinaryCodec
-	paramspace     types.ParamSubspace
 	accKeeper      types.AccountKeeper
 	bankKeeper     types.BankKeeper
 	scheduleKeeper types.ScheduleKeeper
@@ -34,14 +33,13 @@ type Keeper struct {
 
 // NewKeeper creates a delegating keeper
 func NewKeeper(
-	cdc codec.BinaryCodec, mainKey storeTypes.StoreKey, paramspace types.ParamSubspace,
+	cdc codec.BinaryCodec, mainKey storeTypes.StoreKey,
 	accountKeeper types.AccountKeeper, scheduleKeeper types.ScheduleKeeper, profileKeeper types.ProfileKeeper,
 	bankKeeper types.BankKeeper, refKeeper types.ReferralKeeper,
 ) *Keeper {
 	keeper := Keeper{
 		mainStoreKey:   mainKey,
 		cdc:            cdc,
-		paramspace:     paramspace.WithKeyTable(types.ParamKeyTable()),
 		accKeeper:      accountKeeper,
 		scheduleKeeper: scheduleKeeper,
 		profileKeeper:  profileKeeper,

@@ -27,7 +27,6 @@ import (
 type Keeper struct {
 	storeKey         storeTypes.StoreKey
 	cdc              codec.BinaryCodec
-	paramspace       types.ParamSubspace
 	scheduleKeeper   types.ScheduleKeeper
 	upgradeKeeper    types.UprgadeKeeper
 	nodingKeeper     types.NodingKeeper
@@ -40,7 +39,7 @@ type Keeper struct {
 
 // NewKeeper creates a voting keeper
 func NewKeeper(
-	cdc codec.BinaryCodec, key storeTypes.StoreKey, paramspace types.ParamSubspace,
+	cdc codec.BinaryCodec, key storeTypes.StoreKey,
 	scheduleKeeper types.ScheduleKeeper,
 	upgradeKeeper types.UprgadeKeeper,
 	nodingKeeper types.NodingKeeper,
@@ -53,7 +52,6 @@ func NewKeeper(
 	keeper := Keeper{
 		storeKey:         key,
 		cdc:              cdc,
-		paramspace:       paramspace.WithKeyTable(types.ParamKeyTable()),
 		scheduleKeeper:   scheduleKeeper,
 		upgradeKeeper:    upgradeKeeper,
 		nodingKeeper:     nodingKeeper,

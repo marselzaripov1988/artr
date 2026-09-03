@@ -1,0 +1,56 @@
+package util
+
+import (
+	cryptoTypes "github.com/cosmos/cosmos-sdk/crypto/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	legacybech32 "github.com/cosmos/cosmos-sdk/types/bech32/legacybech32"
+)
+
+// SchemaMarkerKey — ключ служебной записи, помечающей стор как
+// инициализированный.
+//
+// Значение 0x00 выбрано потому, что оно свободно во всех индексных сторах
+// Artery: у noding данные лежат под префиксами 0x01–0x03, у referral первым
+// байтом ключа идёт статус (не ниже Businessman, то есть 5), а сторы
+// псевдонимов и карт профиля вообще не обходятся итераторами.
+var SchemaMarkerKey = []byte{0x00}
+
+// schemaVersion — версия раскладки ключей. Пока значение нигде не читается,
+// но оно даёт место для будущих миграций внутри стора.
+const schemaVersion byte = 1
+
+// MarkStoreInitialized записывает в стор служебную запись, если её там нет.
+//
+// Зачем это нужно. Начиная с SDK 0.46 запрос состояния строится через
+// CacheMultiStoreWithVersion, а тот требует версию у каждого смонтированного
+// IAVL-дерева. Для полностью пустого дерева GetImmutable возвращает
+// "version does not exist", и тогда падает любой запрос — независимо от
+// того, к какому модулю он обращён.
+//
+// У Artery несколько индексных сторов, которые законно пусты, пока не
+// появятся соответствующие данные: referral-index заполняется только для
+// аккаунтов со статусом от Businessman, сторы псевдонимов и карт — когда
+// профили их заводят. Наполнить их нечем, поэтому в каждый пишется одна
+// служебная запись.
+//
+// Сторы с параметрами в этом не нуждаются: параметры пишутся при
+// InitGenesis и сами по себе делают дерево непустым.
+func MarkStoreInitialized(store sdk.KVStore) {
+	if !store.Has(SchemaMarkerKey) {
+		store.Set(SchemaMarkerKey, []byte{schemaVersion})
+	}
+}
+
+// MustUnmarshalConsPubKey разбирает консенсусный ключ валидатора из bech32
+// и паникует при ошибке.
+//
+// У legacybech32 паникующего варианта нет — только UnmarshalPubKey с
+// ошибкой. В рабочем коде ошибка обрабатывается по месту, а тестам нужен
+// краткий вариант, иначе каждое обращение разрастается на четыре строки.
+func MustUnmarshalConsPubKey(bech32 string) cryptoTypes.PubKey {
+	pk, err := legacybech32.UnmarshalPubKey(legacybech32.ConsPK, bech32)
+	if err != nil {
+		panic(err)
+	}
+	return pk
+}

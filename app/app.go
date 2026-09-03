@@ -10,11 +10,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/rakyll/statik/fs"
 
+	dbm "github.com/cometbft/cometbft-db"
 	abci "github.com/cometbft/cometbft/abci/types"
 	tmjson "github.com/cometbft/cometbft/libs/json"
 	"github.com/cometbft/cometbft/libs/log"
 	tmos "github.com/cometbft/cometbft/libs/os"
-	dbm "github.com/cometbft/cometbft-db"
 
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
@@ -38,9 +38,6 @@ import (
 	authTypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	consensusKeeper "github.com/cosmos/cosmos-sdk/x/consensus/keeper"
 	consensusTypes "github.com/cosmos/cosmos-sdk/x/consensus/types"
-	"github.com/cosmos/cosmos-sdk/x/params"
-	paramKeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
-	paramTypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	"github.com/cosmos/cosmos-sdk/x/upgrade"
 	upgradeKeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 	upgradeTypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
@@ -82,7 +79,6 @@ var (
 	ModuleBasics = module.NewBasicManager(
 		auth.AppModuleBasic{},
 		bank.AppModuleBasic{},
-		params.AppModuleBasic{},
 		referral.AppModuleBasic{},
 		profile.AppModuleBasic{},
 		schedule.AppModuleBasic{},
@@ -110,16 +106,11 @@ type ArteryApp struct {
 	invCheckPeriod uint
 
 	// keys to access the substores
-	keys  map[string]*storeTypes.KVStoreKey
-	tKeys map[string]*storeTypes.TransientStoreKey
-
-	// subspaces
-	subspaces map[string]paramTypes.Subspace
+	keys map[string]*storeTypes.KVStoreKey
 
 	// keepers
 	accountKeeper    authKeeper.AccountKeeper
 	bankKeeper       bank.Keeper
-	paramsKeeper     paramKeeper.Keeper
 	upgradeKeeper    *upgradeKeeper.Keeper
 	consensusKeeper  consensusKeeper.Keeper
 	referralKeeper   *referral.Keeper
@@ -151,8 +142,7 @@ func NewArteryApp(
 	bApp.SetVersion(version.Version)
 	bApp.SetInterfaceRegistry(ec.InterfaceRegistry)
 
-	keys := newKVStoreKeys(authTypes.StoreKey, bank.StoreKey,
-		paramTypes.StoreKey, upgradeTypes.StoreKey,
+	keys := newKVStoreKeys(authTypes.StoreKey, bank.StoreKey, upgradeTypes.StoreKey,
 		profileTypes.StoreKey, profileTypes.AliasStoreKey, profileTypes.CardStoreKey,
 		scheduleTypes.StoreKey, referral.StoreKey, referral.IndexStoreKey, delegating.MainStoreKey,
 		votingTypes.StoreKey, noding.StoreKey, noding.IdxStoreKey,
@@ -160,8 +150,6 @@ func NewArteryApp(
 		// SDK 0.47 вынес параметры консенсуса в отдельный модуль x/consensus
 		// со своим стором.
 		consensusTypes.StoreKey)
-
-	tKeys := sdk.NewTransientStoreKeys(paramTypes.TStoreKey)
 
 	//TODO: pass `ec.Marshaller` to all modules properly and use it properly in
 
@@ -171,17 +159,8 @@ func NewArteryApp(
 		ec:             ec,
 		invCheckPeriod: invCheckPeriod,
 		keys:           keys,
-		tKeys:          tKeys,
-		subspaces:      make(map[string]paramTypes.Subspace),
 	}
 
-	// The ParamsKeeper handles parameter storage for the application
-	app.paramsKeeper = paramKeeper.NewKeeper(
-		ec.Marshaler,
-		ec.Amino,
-		keys[paramTypes.StoreKey],
-		tKeys[paramTypes.TStoreKey],
-	)
 	// С 0.47 параметры консенсуса живут в x/consensus, а не в подпространстве
 	// x/params. Право менять их отдано модулю upgrade: своего гова у Artery
 	// нет, а адрес модуля никому не принадлежит.
@@ -191,22 +170,11 @@ func NewArteryApp(
 		authTypes.NewModuleAddress(upgradeTypes.ModuleName).String(),
 	)
 	bApp.SetParamStore(&app.consensusKeeper)
-	// Set specific subspaces
-	app.subspaces[authTypes.ModuleName] = app.paramsKeeper.Subspace(authTypes.ModuleName)
-	app.subspaces[bank.ModuleName] = app.paramsKeeper.Subspace(bank.DefaultParamspace)
-	app.subspaces[referral.ModuleName] = app.paramsKeeper.Subspace(referral.DefaultParamspace)
-	app.subspaces[profileTypes.ModuleName] = app.paramsKeeper.Subspace(profileTypes.ModuleName)
-	app.subspaces[scheduleTypes.ModuleName] = app.paramsKeeper.Subspace(scheduleTypes.ModuleName)
-	app.subspaces[delegating.ModuleName] = app.paramsKeeper.Subspace(delegating.DefaultParamspace)
-	app.subspaces[votingTypes.ModuleName] = app.paramsKeeper.Subspace(votingTypes.DefaultParamspace)
-	app.subspaces[noding.ModuleName] = app.paramsKeeper.Subspace(noding.DefaultParamspace)
-	app.subspaces[earning.DefaultParamspace] = app.paramsKeeper.Subspace(earning.DefaultParamspace)
 
 	// Scheduler handles block height based tasks
 	app.scheduleKeeper = scheduleKeeper.NewKeeper(
 		ec.Marshaler,
 		keys[scheduleTypes.StoreKey],
-		app.subspaces[scheduleTypes.ModuleName],
 	)
 
 	//app.scheduleKeeper.AddHook("event-test", func(ctx sdk.Context, data []byte) {
@@ -238,7 +206,6 @@ func NewArteryApp(
 		ec.Marshaler,
 		keys[bank.StoreKey],
 		app.accountKeeper,
-		app.subspaces[bank.ModuleName],
 		make(map[string]bool, 0),
 	)
 
@@ -250,7 +217,6 @@ func NewArteryApp(
 		ec.Marshaler,
 		keys[referral.StoreKey],
 		keys[referral.IndexStoreKey],
-		app.subspaces[referral.ModuleName],
 		app.accountKeeper,
 		app.scheduleKeeper,
 		app.bankKeeper,
@@ -262,7 +228,6 @@ func NewArteryApp(
 		keys[profileTypes.StoreKey],
 		keys[profileTypes.AliasStoreKey],
 		keys[profileTypes.CardStoreKey],
-		app.subspaces[profileTypes.ModuleName],
 		app.accountKeeper,
 		app.bankKeeper,
 		app.referralKeeper,
@@ -272,7 +237,6 @@ func NewArteryApp(
 	app.delegatingKeeper = delegating.NewKeeper(
 		ec.Marshaler,
 		keys[delegating.MainStoreKey],
-		app.subspaces[delegating.DefaultParamspace],
 		app.accountKeeper,
 		app.scheduleKeeper,
 		app.profileKeeper,
@@ -302,7 +266,6 @@ func NewArteryApp(
 		app.referralKeeper,
 		app.accountKeeper,
 		app.bankKeeper,
-		app.subspaces[noding.DefaultParamspace],
 		authTypes.FeeCollectorName,
 		util.SplittableFeeCollectorName,
 	)
@@ -310,7 +273,6 @@ func NewArteryApp(
 	app.earningKeeper = earningKeeper.NewKeeper(
 		ec.Marshaler,
 		keys[earningTypes.StoreKey],
-		app.subspaces[earningTypes.DefaultParamspace],
 		app.accountKeeper,
 		app.bankKeeper,
 		app.scheduleKeeper,
@@ -319,7 +281,6 @@ func NewArteryApp(
 	app.votingKeeper = votingKeeper.NewKeeper(
 		ec.Marshaler,
 		keys[votingTypes.StoreKey],
-		app.subspaces[votingTypes.DefaultParamspace],
 		app.scheduleKeeper,
 		app.upgradeKeeper,
 		app.nodingKeeper,
@@ -480,7 +441,6 @@ func NewArteryApp(
 
 	// initialize stores
 	app.MountKVStores(keys)
-	app.MountTransientStores(tKeys)
 
 	if loadLatest {
 		err := app.LoadLatestVersion()
@@ -517,6 +477,13 @@ func (app *ArteryApp) InitChainer(ctx sdk.Context, req abci.RequestInitChain) ab
 	if err := tmjson.Unmarshal(req.AppStateBytes, &genesisState); err != nil {
 		panic(err)
 	}
+
+	// Карта версий модулей — основа системы миграций x/upgrade начиная с
+	// SDK 0.43: менеджер сравнивает записанную версию с ConsensusVersion
+	// модуля и по расхождению запускает миграцию. Без этого вызова карта
+	// не записывается, стор модуля upgrade остаётся пустым, а пустое
+	// IAVL-дерево с 0.46 ломает любой запрос состояния.
+	app.upgradeKeeper.SetModuleVersionMap(ctx, app.mm.GetVersionMap())
 
 	return app.mm.InitGenesis(ctx, app.ec.Marshaler, genesisState)
 }

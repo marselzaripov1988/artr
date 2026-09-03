@@ -17,13 +17,19 @@ func (k Keeper) GetParams(ctx sdk.Context) (params types.Params) {
 // SetParams sets the subscription parameters to the param space.
 func (k Keeper) SetParams(ctx sdk.Context, params types.Params) {
 	k.Logger(ctx).Debug("SetParams", "params", params)
-	if k.paramspace.Has(ctx, types.KeyCardMagic) {
-		var oldCardMagic uint64
-		k.paramspace.Get(ctx, types.KeyCardMagic, &oldCardMagic)
+	// Множитель номера карты менять нельзя: по нему вычисляются уже
+	// выданные номера. Раньше прежнее значение читалось отдельным ключом
+	// из подпространства x/params, теперь берётся из набора в сторе модуля.
+	//
+	// Нулевое значение трактуется как "не задано" и заменяется прежним —
+	// так было и раньше, поведение сохранено.
+	if bz := ctx.KVStore(k.storeKey).Get(types.ParamsKey); bz != nil {
+		var old types.Params
+		k.cdc.MustUnmarshal(bz, &old)
 
-		if params.CardMagic != oldCardMagic {
+		if params.CardMagic != old.CardMagic {
 			if params.CardMagic == 0 {
-				params.CardMagic = oldCardMagic
+				params.CardMagic = old.CardMagic
 			} else {
 				panic("card number magic must not be changed")
 			}

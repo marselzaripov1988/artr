@@ -7,7 +7,6 @@ import (
 	storeTypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	paramTypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
 	"github.com/arterynetwork/artr/util"
 	"github.com/arterynetwork/artr/x/bank/types"
@@ -50,7 +49,6 @@ type BaseSendKeeper struct {
 	cdc        codec.BinaryCodec
 	ak         types.AccountKeeper
 	storeKey   storeTypes.StoreKey
-	paramSpace paramTypes.Subspace
 
 	// list of addresses that are restricted from receiving transactions
 	blockedAddrs map[string]bool
@@ -60,7 +58,7 @@ type BaseSendKeeper struct {
 }
 
 func NewBaseSendKeeper(
-	cdc codec.BinaryCodec, storeKey storeTypes.StoreKey, ak types.AccountKeeper, paramSpace paramTypes.Subspace, blockedAddrs map[string]bool,
+	cdc codec.BinaryCodec, storeKey storeTypes.StoreKey, ak types.AccountKeeper, blockedAddrs map[string]bool,
 ) BaseSendKeeper {
 
 	return BaseSendKeeper{
@@ -68,7 +66,6 @@ func NewBaseSendKeeper(
 		cdc:            cdc,
 		ak:             ak,
 		storeKey:       storeKey,
-		paramSpace:     paramSpace,
 		blockedAddrs:   blockedAddrs,
 		setCoinHooks:   make(map[string]func(ctx sdk.Context, addr sdk.AccAddress) error),
 	}
@@ -194,16 +191,20 @@ func (k BaseSendKeeper) fireSetCoins(ctx sdk.Context, addr sdk.AccAddress) error
 	return nil
 }
 
-// GetSendEnabled returns the current SendEnabled
+// GetMinSend возвращает минимальную сумму перевода.
+//
+// Раньше значение читалось отдельным ключом из подпространства x/params.
+// После переноса параметров в стор модуля отдельного доступа к одному
+// значению нет — оно часть общего набора.
 func (keeper BaseSendKeeper) GetMinSend(ctx sdk.Context) int64 {
-	var minSend int64
-	keeper.paramSpace.Get(ctx, types.ParamStoreKeyMinSend, &minSend)
-	return minSend
+	return keeper.GetParams(ctx).MinSend
 }
 
-// SetSendEnabled sets the send enabled
+// SetMinSend задаёт минимальную сумму перевода.
 func (keeper BaseSendKeeper) SetMinSend(ctx sdk.Context, minSend int64) {
-	keeper.paramSpace.Set(ctx, types.ParamStoreKeyMinSend, &minSend)
+	params := keeper.GetParams(ctx)
+	params.MinSend = minSend
+	keeper.SetParams(ctx, params)
 }
 
 // IsSendEnabledCoins сообщает, разрешена ли отправка указанных монет.

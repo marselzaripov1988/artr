@@ -9,6 +9,8 @@ import (
 
 // InitGenesis initialize default parameters
 func InitGenesis(ctx sdk.Context, k keeper.Keeper, data types.GenesisState) {
+	// Индексный стор должен быть непустым с самого начала.
+	k.MarkIndexStores(ctx)
 	k.Logger(ctx).Info("Starting from genesis...")
 	k.SetParams(ctx, data.Params)
 	k.ImportProfileRecords(ctx, data.Profiles)

@@ -7,6 +7,8 @@ import (
 // InitGenesis initialize default parameters
 // and the keeper's address to pubkey map
 func InitGenesis(ctx sdk.Context, k Keeper, data GenesisState) {
+	// Индексный стор должен быть непустым с самого начала.
+	k.MarkIndexStore(ctx)
 	k.Logger(ctx).Info("Starting from genesis...")
 	k.SetParams(ctx, data.Params)
 

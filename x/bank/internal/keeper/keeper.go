@@ -9,7 +9,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	paramTypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
 	"github.com/arterynetwork/artr/util"
 	"github.com/arterynetwork/artr/x/bank/types"
@@ -48,25 +47,18 @@ type BaseKeeper struct {
 	ak         types.AccountKeeper
 	cdc        codec.BinaryCodec
 	storeKey   storeTypes.StoreKey
-	paramSpace paramTypes.Subspace
 }
 
 // NewBaseKeeper returns a new BaseKeeper
 func NewBaseKeeper(
-	cdc codec.BinaryCodec, storeKey storeTypes.StoreKey, ak types.AccountKeeper, paramSpace paramTypes.Subspace,
+	cdc codec.BinaryCodec, storeKey storeTypes.StoreKey, ak types.AccountKeeper,
 	blockedAddrs map[string]bool,
 ) BaseKeeper {
-	// set KeyTable if it has not already been set
-	if !paramSpace.HasKeyTable() {
-		paramSpace = paramSpace.WithKeyTable(types.ParamKeyTable())
-	}
-
 	return BaseKeeper{
-		BaseSendKeeper: NewBaseSendKeeper(cdc, storeKey, ak, paramSpace, blockedAddrs),
+		BaseSendKeeper: NewBaseSendKeeper(cdc, storeKey, ak, blockedAddrs),
 		ak:             ak,
 		cdc:            cdc,
 		storeKey:       storeKey,
-		paramSpace:     paramSpace,
 	}
 }
 
