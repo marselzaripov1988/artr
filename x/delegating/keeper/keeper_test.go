@@ -14,6 +14,7 @@ import (
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 
 	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authK "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 
@@ -87,7 +88,7 @@ func (s *Suite) TestDelegatingAndRevoking() {
 		sdk.NewCoins(sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(1_000_000000))),
 		s.bk.GetBalance(s.ctx, user),
 	)
-	s.Nil(
+	s.Empty(
 		s.bk.GetBalance(s.ctx, validator).Add(s.bk.GetBalance(s.ctx, s.accKeeper.GetModuleAddress(util.SplittableFeeCollectorName))...),
 	)
 
@@ -138,7 +139,7 @@ func (s *Suite) TestAccrueAfterRevoke() {
 		sdk.NewCoins(sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(1_000_000000))),
 		s.bk.GetBalance(s.ctx, user),
 	)
-	s.Nil(
+	s.Empty(
 		s.bk.GetBalance(s.ctx, validator).Add(s.bk.GetBalance(s.ctx, s.accKeeper.GetModuleAddress(util.SplittableFeeCollectorName))...),
 	)
 
@@ -224,7 +225,7 @@ func (s *Suite) TestAccrueOnRevoke() {
 		util.Uartrs(1_000_000000),
 		s.bk.GetBalance(s.ctx, user),
 	)
-	s.Nil(
+	s.Empty(
 		s.bk.GetBalance(s.ctx, validator).Add(s.bk.GetBalance(s.ctx, s.accKeeper.GetModuleAddress(util.SplittableFeeCollectorName))...),
 	)
 
@@ -312,7 +313,7 @@ func (s *Suite) TestAccrue_MissedPart() {
 		sdk.NewCoins(sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(1_000_000000))),
 		s.bk.GetBalance(s.ctx, user),
 	)
-	s.Nil(
+	s.Empty(
 		s.bk.GetBalance(s.ctx, validator).Add(s.bk.GetBalance(s.ctx, s.accKeeper.GetModuleAddress(util.SplittableFeeCollectorName))...),
 	)
 
@@ -369,7 +370,7 @@ func (s *Suite) TestAccrueOnRevoke_MissedPart() {
 		sdk.NewCoins(sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(1_000_000000))),
 		s.bk.GetBalance(s.ctx, user),
 	)
-	s.Nil(
+	s.Empty(
 		s.bk.GetBalance(s.ctx, validator).Add(s.bk.GetBalance(s.ctx, s.accKeeper.GetModuleAddress(util.SplittableFeeCollectorName))...),
 	)
 
@@ -771,7 +772,13 @@ func (s *Suite) nextBlock() (abci.ResponseEndBlock, abci.ResponseBeginBlock) {
 }
 
 func (s *Suite) setMissedPart(user sdk.AccAddress, value util.Fraction) {
-	store := s.ctx.KVStore(s.app.GetKeys()[delegating.MainStoreKey])
+	// Записи делегирования лежат в сторе под префиксом — тот же, что
+	// использует кипер. Без него запись окажется в другом месте, и код её
+	// не увидит.
+	store := prefix.NewStore(
+		s.ctx.KVStore(s.app.GetKeys()[delegating.MainStoreKey]),
+		types.RecordPrefix,
+	)
 	var data types.Record
 	s.cdc.MustUnmarshal(store.Get(user), &data)
 	data.MissedPart = &value
