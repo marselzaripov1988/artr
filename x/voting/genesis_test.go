@@ -17,8 +17,6 @@ import (
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	legacybech32 "github.com/cosmos/cosmos-sdk/types/bech32/legacybech32"
-	params "github.com/cosmos/cosmos-sdk/x/params/types"
 
 	"github.com/arterynetwork/artr/app"
 	"github.com/arterynetwork/artr/util"
@@ -54,7 +52,7 @@ func (s *Suite) SetupTest() {
 
 	s.bbHeader = abci.RequestBeginBlock{
 		Header: tmproto.Header{
-			ProposerAddress: legacybech32.MustUnmarshalPubKey(legacybech32.ConsPK, app.DefaultUser1ConsPubKey).Address().Bytes(),
+			ProposerAddress: util.MustUnmarshalConsPubKey(app.DefaultUser1ConsPubKey).Address().Bytes(),
 		},
 	}
 }
@@ -239,7 +237,6 @@ func (s Suite) checkExportImport() {
 		s.ctx.BlockTime(),
 		[]string{
 			types.StoreKey,
-			params.StoreKey,
 		},
 		map[string]app.Decoder{
 			types.StoreKey: func(bz []byte) (string, error) {
@@ -251,11 +248,9 @@ func (s Suite) checkExportImport() {
 				}
 				return "", fmt.Errorf("invalid format")
 			},
-			params.StoreKey: app.DummyDecoder,
 		},
 		map[string]app.Decoder{
-			types.StoreKey:  app.DummyDecoder,
-			params.StoreKey: app.DummyDecoder,
+			types.StoreKey: app.DummyDecoder,
 		},
 		make(map[string][][]byte, 0),
 	)

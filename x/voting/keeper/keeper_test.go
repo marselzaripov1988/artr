@@ -14,7 +14,6 @@ import (
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	legacybech32 "github.com/cosmos/cosmos-sdk/types/bech32/legacybech32"
 
 	"github.com/arterynetwork/artr/app"
 	"github.com/arterynetwork/artr/util"
@@ -58,7 +57,7 @@ func (s *BaseSuite) setupTest(genesis []byte, consPubKey string) {
 
 	s.bbHeader = abci.RequestBeginBlock{
 		Header: tmproto.Header{
-			ProposerAddress: legacybech32.MustUnmarshalPubKey(legacybech32.ConsPK, consPubKey).Address().Bytes(),
+			ProposerAddress: util.MustUnmarshalConsPubKey(consPubKey).Address().Bytes(),
 		},
 	}
 }

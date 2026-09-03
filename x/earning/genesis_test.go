@@ -4,6 +4,7 @@
 package earning_test
 
 import (
+	"github.com/arterynetwork/artr/util"
 	"testing"
 
 	"github.com/stretchr/testify/suite"
@@ -12,8 +13,6 @@ import (
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	legacybech32 "github.com/cosmos/cosmos-sdk/types/bech32/legacybech32"
-	params "github.com/cosmos/cosmos-sdk/x/params/types"
 
 	"github.com/arterynetwork/artr/app"
 	"github.com/arterynetwork/artr/x/earning"
@@ -46,7 +45,7 @@ func (s *Suite) SetupTest() {
 
 	s.bbHeader = abci.RequestBeginBlock{
 		Header: tmproto.Header{
-			ProposerAddress: legacybech32.MustUnmarshalPubKey(legacybech32.ConsPK, app.DefaultUser1ConsPubKey).Address().Bytes(),
+			ProposerAddress: util.MustUnmarshalConsPubKey(app.DefaultUser1ConsPubKey).Address().Bytes(),
 		},
 	}
 }
@@ -76,17 +75,14 @@ func (s Suite) checkExportImport() {
 		[]string{
 			earning.StoreKey,
 			schedule.StoreKey,
-			params.StoreKey,
 		},
 		map[string]app.Decoder{
 			earning.StoreKey:  app.AccAddressDecoder,
 			schedule.StoreKey: app.Uint64Decoder,
-			params.StoreKey:   app.DummyDecoder,
 		},
 		map[string]app.Decoder{
 			earning.StoreKey:  app.DummyDecoder,
 			schedule.StoreKey: app.DummyDecoder,
-			params.StoreKey:   app.DummyDecoder,
 		},
 		make(map[string][][]byte, 0),
 	)

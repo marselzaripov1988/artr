@@ -1,3 +1,4 @@
+//go:build testing
 // +build testing
 
 package profile_test
@@ -10,7 +11,6 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/testutil/testdata"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	params "github.com/cosmos/cosmos-sdk/x/params/types"
 
 	"github.com/arterynetwork/artr/app"
 	"github.com/arterynetwork/artr/util"
@@ -116,21 +116,18 @@ func (s Suite) checkExportImport() {
 			types.StoreKey,
 			types.AliasStoreKey,
 			types.CardStoreKey,
-			params.StoreKey,
 			scheduleT.StoreKey,
 		},
 		map[string]app.Decoder{
 			types.StoreKey:      app.DummyDecoder,
 			types.AliasStoreKey: app.DummyDecoder,
 			types.CardStoreKey:  app.Uint64Decoder,
-			params.StoreKey:     app.DummyDecoder,
 			scheduleT.StoreKey:  app.TimeDecoder,
 		},
 		map[string]app.Decoder{
 			types.StoreKey:      app.DummyDecoder,
 			types.AliasStoreKey: app.DummyDecoder,
 			types.CardStoreKey:  app.DummyDecoder,
-			params.StoreKey:     app.DummyDecoder,
 			scheduleT.StoreKey:  app.ScheduleDecoder,
 		},
 		make(map[string][][]byte, 0),

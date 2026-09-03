@@ -4,6 +4,7 @@
 package keeper_test
 
 import (
+	"github.com/arterynetwork/artr/util"
 	"testing"
 	"time"
 
@@ -15,7 +16,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	storeTypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	legacybech32 "github.com/cosmos/cosmos-sdk/types/bech32/legacybech32"
 	authK "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 
 	"github.com/arterynetwork/artr/app"
@@ -65,7 +65,7 @@ func (s *Suite) SetupTest() {
 
 	s.bbHeader = abci.RequestBeginBlock{
 		Header: tmproto.Header{
-			ProposerAddress: legacybech32.MustUnmarshalPubKey(legacybech32.ConsPK, app.DefaultUser1ConsPubKey).Address().Bytes(),
+			ProposerAddress: util.MustUnmarshalConsPubKey(app.DefaultUser1ConsPubKey).Address().Bytes(),
 		},
 	}
 }

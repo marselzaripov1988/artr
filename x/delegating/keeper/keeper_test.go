@@ -15,7 +15,6 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	legacybech32 "github.com/cosmos/cosmos-sdk/types/bech32/legacybech32"
 	authK "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 
 	"github.com/arterynetwork/artr/app"
@@ -67,7 +66,7 @@ func (s *Suite) SetupTest() {
 
 	s.bbHeader = abci.RequestBeginBlock{
 		Header: tmproto.Header{
-			ProposerAddress: legacybech32.MustUnmarshalPubKey(legacybech32.ConsPK, keeper.DefaultUser1ConsPubKey).Address().Bytes(),
+			ProposerAddress: util.MustUnmarshalConsPubKey(keeper.DefaultUser1ConsPubKey).Address().Bytes(),
 		},
 	}
 }

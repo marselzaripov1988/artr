@@ -21,7 +21,6 @@ import (
 	storeTypes "github.com/cosmos/cosmos-sdk/store/types"
 	"github.com/cosmos/cosmos-sdk/testutil/testdata"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	legacybech32 "github.com/cosmos/cosmos-sdk/types/bech32/legacybech32"
 	authK "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 
 	"github.com/arterynetwork/artr/app"
@@ -73,7 +72,7 @@ func (s *BaseSuite) setupTest(genesis json.RawMessage, consPubKey string) {
 
 	s.bbHeader = abci.RequestBeginBlock{
 		Header: tmproto.Header{
-			ProposerAddress: legacybech32.MustUnmarshalPubKey(legacybech32.ConsPK, consPubKey).Address().Bytes(),
+			ProposerAddress: util.MustUnmarshalConsPubKey(consPubKey).Address().Bytes(),
 		},
 	}
 }

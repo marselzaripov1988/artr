@@ -23,6 +23,7 @@ import (
 	"github.com/cometbft/cometbft/libs/log"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	tmtypes "github.com/cometbft/cometbft/types"
+	dbm "github.com/cometbft/cometbft-db"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
@@ -31,8 +32,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/kv"
 	authKeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
-	paramKeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
-	params "github.com/cosmos/cosmos-sdk/x/params/types"
 	upgradeKeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 
 	"github.com/arterynetwork/artr/x/bank"
@@ -55,13 +54,10 @@ const verbose = false
 const printGenesis = false
 
 func (app ArteryApp) GetKeys() map[string]*storeTypes.KVStoreKey                 { return app.keys }
-func (app ArteryApp) GetTransientKeys() map[string]*storeTypes.TransientStoreKey { return app.tKeys }
-func (app ArteryApp) GetSubspaces() map[string]params.Subspace                   { return app.subspaces }
 
 func (app ArteryApp) GetAccountKeeper() authKeeper.AccountKeeper { return app.accountKeeper }
 func (app ArteryApp) GetBankKeeper() bank.Keeper                 { return app.bankKeeper }
-func (app ArteryApp) GetParamsKeeper() paramKeeper.Keeper        { return app.paramsKeeper }
-func (app ArteryApp) GetUpgradeKeeper() upgradeKeeper.Keeper     { return app.upgradeKeeper }
+func (app ArteryApp) GetUpgradeKeeper() *upgradeKeeper.Keeper    { return app.upgradeKeeper }
 func (app ArteryApp) GetReferralKeeper() referral.Keeper         { return *app.referralKeeper }
 func (app ArteryApp) GetProfileKeeper() profileKeeper.Keeper     { return app.profileKeeper }
 func (app ArteryApp) GetScheduleKeeper() scheduleKeeper.Keeper   { return app.scheduleKeeper }
@@ -78,7 +74,7 @@ func NewAppFromGenesis(genesis []byte) (app *ArteryApp, cleanup func(), ctx sdk.
 		logger = log.NewNopLogger()
 	}
 	dir, _ := ioutil.TempDir("", "goleveldb-app-sim")
-	db, _ := sdk.NewLevelDB("Simulation", dir)
+	db, _ := dbm.NewGoLevelDB("Simulation", dir)
 
 	cleanup = func() {
 		_ = db.Close()
@@ -184,7 +180,7 @@ func (app ArteryApp) CheckExportImport(t *testing.T, time time.Time, storeKeys [
 	app.EndBlocker(ctx, abci.RequestEndBlock{Height: ctx.BlockHeight()})
 	ctx = ctx.WithBlockHeight(ctx.BlockHeight() + 1)
 
-	appState, err := app.ExportAppStateAndValidators(false, nil)
+	appState, err := app.ExportAppStateAndValidators(false, nil, nil)
 	assert.NoError(t, err)
 
 	if printGenesis {
@@ -198,7 +194,7 @@ func (app ArteryApp) CheckExportImport(t *testing.T, time time.Time, storeKeys [
 		logger = log.NewNopLogger()
 	}
 	dir, _ := ioutil.TempDir("", "goleveldb-app-sim-2")
-	db, _ := sdk.NewLevelDB("Simulation-2", dir)
+	db, _ := dbm.NewGoLevelDB("Simulation-2", dir)
 
 	defer func() {
 		_ = db.Close()

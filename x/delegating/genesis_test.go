@@ -1,3 +1,4 @@
+//go:build testing
 // +build testing
 
 package delegating_test
@@ -10,7 +11,6 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	params "github.com/cosmos/cosmos-sdk/x/params/types"
 
 	"github.com/arterynetwork/artr/app"
 	"github.com/arterynetwork/artr/util"
@@ -129,12 +129,10 @@ func (s Suite) checkExportImport() {
 		[]string{
 			delegating.MainStoreKey,
 			schedule.StoreKey,
-			params.StoreKey,
 		},
 		map[string]app.Decoder{
 			delegating.MainStoreKey: app.AccAddressDecoder,
 			schedule.StoreKey:       app.Uint64Decoder,
-			params.StoreKey:         app.DummyDecoder,
 		},
 		map[string]app.Decoder{
 			delegating.MainStoreKey: func(bz []byte) (string, error) {
@@ -145,7 +143,6 @@ func (s Suite) checkExportImport() {
 				return fmt.Sprintf("%+v", data), nil
 			},
 			schedule.StoreKey: app.ScheduleDecoder,
-			params.StoreKey:   app.DummyDecoder,
 		},
 		make(map[string][][]byte, 0),
 	)

@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	params "github.com/cosmos/cosmos-sdk/x/params/types"
 
 	"github.com/arterynetwork/artr/app"
 	"github.com/arterynetwork/artr/x/referral"
@@ -82,17 +81,14 @@ func (s GenSuite) checkExportImport() {
 		[]string{
 			referral.StoreKey,
 			schedule.StoreKey,
-			params.StoreKey,
 		},
 		map[string]app.Decoder{
 			referral.StoreKey: app.StringDecoder,
 			schedule.StoreKey: app.Uint64Decoder,
-			params.StoreKey:   app.DummyDecoder,
 		},
 		map[string]app.Decoder{
 			referral.StoreKey: s.RDecoder,
 			schedule.StoreKey: app.ScheduleDecoder,
-			params.StoreKey:   app.DummyDecoder,
 		},
 		map[string][][]byte{},
 	)

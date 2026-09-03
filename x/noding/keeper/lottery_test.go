@@ -4,6 +4,7 @@
 package keeper_test
 
 import (
+	"github.com/arterynetwork/artr/util"
 	"io/ioutil"
 	"testing"
 
@@ -14,7 +15,6 @@ import (
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	crypto "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	legacybech32 "github.com/cosmos/cosmos-sdk/types/bech32/legacybech32"
 )
 
 func TestNodingKeeper_Lottery(t *testing.T) {
@@ -66,7 +66,7 @@ func (s *LotterySuite) SetupTest() {
 		"artrvalconspub1zcjduepq753pcpuhu2kyugz9z4lyvye222rtjxraazxffqw9yz0rv7m270jqurvy6q",
 		"artrvalconspub1zcjduepqucxw7h4cz59c3hdnqucu702fcw556l9c5dyewkjzkjjxgvklxnzqfufx5s",
 	} {
-		s.pubKeys = append(s.pubKeys, legacybech32.MustUnmarshalPubKey(legacybech32.ConsPK, key))
+		s.pubKeys = append(s.pubKeys, util.MustUnmarshalConsPubKey(key))
 	}
 }
 
