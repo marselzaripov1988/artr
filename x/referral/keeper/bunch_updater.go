@@ -1,7 +1,6 @@
 package keeper
 
 import (
-	"bytes"
 	"sort"
 	"strings"
 	"time"
@@ -55,9 +54,23 @@ func (cbz *callbacks) Swap(i, j int) {
 }
 
 type bunchUpdater struct {
-	k         Keeper
-	ctx       sdk.Context
-	data      []kvRecord
+	k   Keeper
+	ctx sdk.Context
+
+	// data хранится срезом, а не картой, чтобы commit писал в стор в том
+	// же порядке, в каком записи накапливались.
+	data []kvRecord
+	// index — позиция записи в data по её ключу.
+	//
+	// Без него get и set искали по data перебором, и обход всех
+	// реферальных записей выходил квадратичным: каждый аккаунт заново
+	// проходил срез, растущий до размера всей сети. На тестовом генезисе
+	// в сотню аккаунтов это незаметно, а на выгрузке мейннета — 381
+	// тысяча записей, и обход не заканчивается: к перебору на каждый
+	// аккаунт добавляются запросы предков, которые checkStatusRequirements
+	// делает на десять уровней вверх.
+	index map[string]int
+
 	callbacks callbacks
 }
 
@@ -66,6 +79,7 @@ func newBunchUpdater(k Keeper, ctx sdk.Context) *bunchUpdater {
 		k:         k,
 		ctx:       ctx,
 		data:      nil,
+		index:     make(map[string]int),
 		callbacks: nil,
 	}
 }
@@ -76,12 +90,11 @@ func (bu *bunchUpdater) set(acc string, value types.Info) error {
 	if err != nil {
 		return err
 	}
-	for i, record := range bu.data {
-		if bytes.Equal(record.key, keyBytes) {
-			bu.data[i].value = valueBytes
-			return nil
-		}
+	if i, ok := bu.index[acc]; ok {
+		bu.data[i].value = valueBytes
+		return nil
 	}
+	bu.index[acc] = len(bu.data)
 	bu.data = append(bu.data, kvRecord{
 		key:   keyBytes,
 		value: valueBytes,
@@ -97,11 +110,8 @@ func (bu *bunchUpdater) get(acc string) (types.Info, error) {
 
 		value types.Info
 	)
-	for _, record := range bu.data {
-		if bytes.Equal(record.key, keyBytes) {
-			valueBytes = record.value
-			break
-		}
+	if i, ok := bu.index[acc]; ok {
+		valueBytes = bu.data[i].value
 	}
 	if valueBytes == nil {
 		store := bu.k.infoStore(bu.ctx)
