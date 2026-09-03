@@ -14,14 +14,36 @@ func (args *AddressArgs) Validate() error {
 	return err
 }
 func (args *SoftwareUpgradeArgs) Validate() error {
-	if args.Name == "" {
-		return errors.New("empty upgrade name")
+	if err := args.ValidateHistorical(); err != nil {
+		return err
 	}
 	if args.Height > 0 {
 		return errors.New("upgrade height is deprecated, use time instead")
 	}
 	if args.Time == nil {
 		return errors.New("upgrade time is nil")
+	}
+	return nil
+}
+
+// ValidateHistorical проверяет заявку на обновление без правил о том, как
+// её допустимо подавать сегодня.
+//
+// Отказ от высоты в пользу времени — правило про будущие заявки, а не
+// признак испорченной записи. В истории голосований лежат обновления
+// эпохи 1.1.x, когда высота была единственным способом: у них Height
+// задан, а Time пуст. Проверять их сегодняшним правилом значит объявлять
+// собственное прошлое сети невалидным — на выгрузке мейннета ровно это и
+// происходит, одиннадцать записей из ста пятнадцати.
+//
+// Поэтому здесь остаётся только структурное требование: срок обновления
+// задан ровно одним из двух способов.
+func (args *SoftwareUpgradeArgs) ValidateHistorical() error {
+	if args.Name == "" {
+		return errors.New("empty upgrade name")
+	}
+	if (args.Height > 0) == (args.Time != nil) {
+		return errors.New("upgrade must be scheduled either by height or by time")
 	}
 	return nil
 }

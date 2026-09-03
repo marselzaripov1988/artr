@@ -27,7 +27,16 @@ func (p Proposal) String() string {
 	return string(bz)
 }
 
-func (p Proposal) Validate() error {
+// Validate проверяет заявку по сегодняшним правилам — так, как её
+// допустимо подать сейчас.
+func (p Proposal) Validate() error { return p.validate(false) }
+
+// ValidateHistorical проверяет уже закрытую заявку: только на то, что
+// запись цела, без правил о допустимой форме новых заявок. Подробнее —
+// в SoftwareUpgradeArgs.ValidateHistorical.
+func (p Proposal) ValidateHistorical() error { return p.validate(true) }
+
+func (p Proposal) validate(historical bool) error {
 	if p.Name == "" {
 		return errors.New("invalid name: empty string")
 	}
@@ -118,7 +127,13 @@ func (p Proposal) Validate() error {
 		if args, ok := p.Args.(*Proposal_SoftwareUpgrade); !ok {
 			return errors.Errorf("invalid args: %T, *Proposal_SoftwareUpgrade expected", p.Args)
 		} else {
-			if err := args.SoftwareUpgrade.Validate(); err != nil {
+			var err error
+			if historical {
+				err = args.SoftwareUpgrade.ValidateHistorical()
+			} else {
+				err = args.SoftwareUpgrade.Validate()
+			}
+			if err != nil {
 				return errors.Wrap(err, "invalid args")
 			}
 		}
@@ -358,7 +373,7 @@ func (r ProposalHistoryRecord) GetDisagreed() *Government {
 }
 
 func (r ProposalHistoryRecord) Validate() error {
-	if err := r.Proposal.Validate(); err != nil {
+	if err := r.Proposal.ValidateHistorical(); err != nil {
 		return errors.Wrap(err, "invalid proposal")
 	}
 	if r.Government == nil {

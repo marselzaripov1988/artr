@@ -5,6 +5,7 @@ package types_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -60,4 +61,64 @@ func TestVotesWithoutProposalRejected(t *testing.T) {
 	gs.Agreed = nil
 	gs.Disagreed = []string{addr1}
 	require.Error(t, types.ValidateGenesis(gs))
+}
+
+// legacyUpgrade — заявка на обновление эпохи 1.1.x: срок задан высотой,
+// времени нет. Подать такую сегодня нельзя, но в истории их одиннадцать
+// штук из ста пятнадцати.
+func legacyUpgrade() types.Proposal {
+	return types.Proposal{
+		Name:   "1.1.1 patch",
+		Author: addr1,
+		Type:   types.PROPOSAL_TYPE_SOFTWARE_UPGRADE,
+		Args: &types.Proposal_SoftwareUpgrade{
+			SoftwareUpgrade: &types.SoftwareUpgradeArgs{
+				Name:   "1.1.1",
+				Height: 23770,
+			},
+		},
+	}
+}
+
+// TestLegacyUpgradeInHistoryAccepted проверяет, что прошлое сети не
+// объявляется недействительным сегодняшним правилом.
+func TestLegacyUpgradeInHistoryAccepted(t *testing.T) {
+	gs := types.GenesisState{
+		Params:     validParams(),
+		Government: []string{addr1, addr2},
+		History: []types.ProposalHistoryRecord{{
+			Proposal:   legacyUpgrade(),
+			Government: []string{addr1, addr2},
+			Agreed:     []string{addr1, addr2},
+			Started:    23000,
+			Finished:   23100,
+		}},
+	}
+
+	require.NoError(t, types.ValidateGenesis(gs))
+}
+
+// TestLegacyUpgradeRejectedAsNew — правило про будущие заявки сохраняется:
+// послабление касается только записей истории.
+func TestLegacyUpgradeRejectedAsNew(t *testing.T) {
+	require.Error(t, legacyUpgrade().Validate())
+	require.NoError(t, legacyUpgrade().ValidateHistorical())
+}
+
+// TestUpgradeScheduleIsExactlyOne проверяет структурное требование,
+// которое осталось после снятия правила о высоте: срок задан ровно одним
+// способом. Заявка без срока вовсе или с двумя сразу — испорченная
+// запись, и в истории тоже.
+func TestUpgradeScheduleIsExactlyOne(t *testing.T) {
+	at := time.Now()
+
+	neither := &types.SoftwareUpgradeArgs{Name: "1.1.1"}
+	require.Error(t, neither.ValidateHistorical(), "срок не задан вовсе")
+
+	both := &types.SoftwareUpgradeArgs{Name: "1.1.1", Height: 23770, Time: &at}
+	require.Error(t, both.ValidateHistorical(), "срок задан дважды")
+
+	byTime := &types.SoftwareUpgradeArgs{Name: "1.1.1", Time: &at}
+	require.NoError(t, byTime.ValidateHistorical())
+	require.NoError(t, byTime.Validate(), "нынешний способ должен проходить обе проверки")
 }
