@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/types/address"
 )
 
 const (
@@ -13,6 +12,9 @@ const (
 	QuerierRoute = ModuleName
 	StoreKey     = ModuleName
 )
+
+// addrLen — длина адреса аккаунта в байтах, должна совпадать с app.AddrLen.
+const addrLen = 20
 
 // KVStore keys
 var (
@@ -36,12 +38,16 @@ func DenomMetadataKey(denom string) []byte {
 // store. The key must not contain the perfix BalancesPrefix as the prefix store
 // iterator discards the actual prefix.
 func AddressFromBalancesStore(key []byte) sdk.AccAddress {
-	// SDK 0.43 убрал sdk.AddrLen — адреса стали переменной длины. У Artery
-	// они по-прежнему ровно 20 байт (см. app/config.go), что и есть address.Len.
-	addr := key[:address.Len]
-	if len(addr) != address.Len {
-		panic(fmt.Sprintf("unexpected account address key length; got: %d, expected: %d", len(addr), address.Len))
+	// SDK 0.43 убрал sdk.AddrLen — в SDK адреса стали переменной длины.
+	//
+	// Подставлять вместо него address.Len нельзя: это 32 байта (длина
+	// SHA-256 из ADR-028), а у Artery адреса двадцатибайтовые. Значение
+	// продублировано здесь, потому что app.AddrLen отсюда недоступен —
+	// пакет app импортирует этот, и получилась бы циклическая зависимость.
+	if len(key) < addrLen {
+		panic(fmt.Sprintf("unexpected account address key length; got: %d, expected: %d", len(key), addrLen))
 	}
+	addr := key[:addrLen]
 
 	return sdk.AccAddress(addr)
 }
