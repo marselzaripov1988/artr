@@ -6,6 +6,7 @@ package app
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"math"
@@ -18,12 +19,12 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 
+	dbm "github.com/cometbft/cometbft-db"
 	abci "github.com/cometbft/cometbft/abci/types"
 	tmjson "github.com/cometbft/cometbft/libs/json"
 	"github.com/cometbft/cometbft/libs/log"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	tmtypes "github.com/cometbft/cometbft/types"
-	dbm "github.com/cometbft/cometbft-db"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
@@ -53,7 +54,7 @@ func init() {
 const verbose = false
 const printGenesis = false
 
-func (app ArteryApp) GetKeys() map[string]*storeTypes.KVStoreKey                 { return app.keys }
+func (app ArteryApp) GetKeys() map[string]*storeTypes.KVStoreKey { return app.keys }
 
 func (app ArteryApp) GetAccountKeeper() authKeeper.AccountKeeper { return app.accountKeeper }
 func (app ArteryApp) GetBankKeeper() bank.Keeper                 { return app.bankKeeper }
@@ -206,6 +207,8 @@ func (app ArteryApp) CheckExportImport(t *testing.T, time time.Time, storeKeys [
 	if err := tmjson.Unmarshal(appState.AppState, &genesisState); err != nil {
 		panic(err)
 	}
+	ensureActiveValidator(genesisState)
+
 	ctx2 := app2.NewContext(true, tmproto.Header{Height: app2.LastBlockHeight(), Time: time})
 	app2.mm.InitGenesis(ctx2, app2.ec.Marshaler, genesisState)
 
@@ -248,6 +251,61 @@ func (app ArteryApp) CheckExportImport(t *testing.T, time time.Time, storeKeys [
 		assert.Empty(t, dkvA, "VANISHED pair(s) in %s kvstore", key)
 		assert.Empty(t, dkvB, "ARTIFACT pair(s) in %s kvstore", key)
 	}
+}
+
+// ensureActiveValidator дописывает в выгруженный генезис активного
+// валидатора, если там не осталось ни одного.
+//
+// С SDK 0.47 InitGenesis паникует на пустом наборе валидаторов. Часть
+// тестов прокручивает время на несколько суток, единственный валидатор
+// тестового генезиса за это время деактивируется, и обратный импорт
+// падает — хотя проверяют эти тесты совсем другое (содержимое сторов
+// referral и schedule, noding в сличение не входит).
+//
+// Это не только тестовая деталь: выбранный способ миграции — выгрузка
+// состояния и запуск с нового генезиса — на состоянии без активных
+// валидаторов теперь не заведётся. Инструмент patch-genesis решает это
+// флагом --adam, оставляющим ровно одного активного.
+func ensureActiveValidator(genesisState GenesisState) {
+	raw, ok := genesisState[noding.ModuleName]
+	if !ok {
+		return
+	}
+
+	var section map[string]json.RawMessage
+	if err := tmjson.Unmarshal(raw, &section); err != nil {
+		panic(err)
+	}
+
+	var active, nonActive []json.RawMessage
+	_ = tmjson.Unmarshal(section["active"], &active)
+	_ = tmjson.Unmarshal(section["non_active"], &nonActive)
+	if len(active) > 0 || len(nonActive) == 0 {
+		return
+	}
+
+	// Первого отключённого делаем активным, а критерии допуска обнуляем:
+	// после компрессии аккаунт им заведомо не удовлетворяет.
+	section["active"] = mustMarshalJSON([]json.RawMessage{nonActive[0]})
+	section["non_active"] = mustMarshalJSON(nonActive[1:])
+
+	var params map[string]json.RawMessage
+	if err := tmjson.Unmarshal(section["params"], &params); err != nil {
+		panic(err)
+	}
+	params["min_criteria"] = json.RawMessage(
+		`{"status":"STATUS_LUCKY","self_stake":"0","total_stake":"0"}`)
+	section["params"] = mustMarshalJSON(params)
+
+	genesisState[noding.ModuleName] = mustMarshalJSON(section)
+}
+
+func mustMarshalJSON(v interface{}) json.RawMessage {
+	bz, err := tmjson.Marshal(v)
+	if err != nil {
+		panic(err)
+	}
+	return bz
 }
 
 //---------------------------------------------------------------------------------------------------

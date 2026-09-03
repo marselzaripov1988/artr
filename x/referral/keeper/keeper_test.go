@@ -18,6 +18,7 @@ import (
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 
 	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/store/prefix"
 	storeTypes "github.com/cosmos/cosmos-sdk/store/types"
 	"github.com/cosmos/cosmos-sdk/testutil/testdata"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -1557,7 +1558,7 @@ func (s *BaseSuite) setBalance(acc sdk.AccAddress, coins sdk.Coins) error {
 }
 
 func (s *BaseSuite) get(acc string) (types.Info, error) {
-	store := s.ctx.KVStore(s.storeKey)
+	store := prefix.NewStore(s.ctx.KVStore(s.storeKey), types.InfoPrefix)
 	keyBytes := []byte(acc)
 	valueBytes := store.Get(keyBytes)
 	var value types.Info
@@ -1566,7 +1567,7 @@ func (s *BaseSuite) get(acc string) (types.Info, error) {
 }
 
 func (s *BaseSuite) set(acc string, value types.Info) error {
-	store := s.ctx.KVStore(s.storeKey)
+	store := prefix.NewStore(s.ctx.KVStore(s.storeKey), types.InfoPrefix)
 	keyBytes := []byte(acc)
 	valueBytes, err := s.cdc.Marshal(&value)
 	if err != nil {
@@ -1577,7 +1578,7 @@ func (s *BaseSuite) set(acc string, value types.Info) error {
 }
 
 func (s *BaseSuite) update(acc string, callback func(*types.Info)) error {
-	store := s.ctx.KVStore(s.storeKey)
+	store := prefix.NewStore(s.ctx.KVStore(s.storeKey), types.InfoPrefix)
 	keyBytes := []byte(acc)
 	valueBytes := store.Get(keyBytes)
 	var value types.Info

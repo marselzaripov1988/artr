@@ -48123,19 +48123,43 @@
         "accrue_percentage_table": [
           {
             "start": "0",
-            "percent_list": ["21%", "0%", "1%", "0%", "0%"]
+            "percent_list": [
+              "21%",
+              "0%",
+              "1%",
+              "0%",
+              "0%"
+            ]
           },
           {
             "start": "1000000000",
-            "percent_list": ["24%", "0%", "1%", "0%", "0%"]
+            "percent_list": [
+              "24%",
+              "0%",
+              "1%",
+              "0%",
+              "0%"
+            ]
           },
           {
             "start": "10000000000",
-            "percent_list": ["27%", "0%", "1%", "0%", "0%"]
+            "percent_list": [
+              "27%",
+              "0%",
+              "1%",
+              "0%",
+              "0%"
+            ]
           },
           {
             "start": "100000000000",
-            "percent_list": ["30%", "0%", "1%", "0%", "0%"]
+            "percent_list": [
+              "30%",
+              "0%",
+              "1%",
+              "0%",
+              "0%"
+            ]
           }
         ]
       }
@@ -48153,9 +48177,9 @@
         "jail_after": 2,
         "max_validators": 100,
         "min_criteria": {
-          "status": "STATUS_LEADER",
-          "self_stake": "10000000000",
-          "total_stake": "50000000000"
+          "status": "STATUS_LUCKY",
+          "self_stake": "0",
+          "total_stake": "0"
         },
         "unjail_after": "120",
         "voting_power": {
@@ -48171,7 +48195,13 @@
           ],
           "luckies_voting_power": 10
         }
-      }
+      },
+      "active": [
+        {
+          "account": "artr1yhy6d3m4utltdml7w7zte7mqx5wyuskq9rr5vg",
+          "pub_key": "artrvalconspub1zcjduepqpme87trszw7awc62ra2de9edwr40v7xy7yfhvpvds96fncagm04qxu308e"
+        }
+      ]
     },
     "profile": {
       "params": {

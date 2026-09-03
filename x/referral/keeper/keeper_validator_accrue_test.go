@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/store/prefix"
 	storeTypes "github.com/cosmos/cosmos-sdk/store/types"
 	"github.com/cosmos/cosmos-sdk/testutil/testdata"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -460,7 +461,7 @@ func (s *VASuite) setBalance(acc sdk.AccAddress, coins sdk.Coins) error {
 }
 
 func (s *VASuite) get(acc string) (types.Info, error) {
-	store := s.ctx.KVStore(s.storeKey)
+	store := prefix.NewStore(s.ctx.KVStore(s.storeKey), types.InfoPrefix)
 	keyBytes := []byte(acc)
 	valueBytes := store.Get(keyBytes)
 	var value types.Info
@@ -469,7 +470,7 @@ func (s *VASuite) get(acc string) (types.Info, error) {
 }
 
 func (s *VASuite) set(acc string, value types.Info) error {
-	store := s.ctx.KVStore(s.storeKey)
+	store := prefix.NewStore(s.ctx.KVStore(s.storeKey), types.InfoPrefix)
 	keyBytes := []byte(acc)
 	valueBytes, err := s.cdc.Marshal(&value)
 	if err != nil {
@@ -480,7 +481,7 @@ func (s *VASuite) set(acc string, value types.Info) error {
 }
 
 func (s *VASuite) update(acc string, callback func(*types.Info)) error {
-	store := s.ctx.KVStore(s.storeKey)
+	store := prefix.NewStore(s.ctx.KVStore(s.storeKey), types.InfoPrefix)
 	keyBytes := []byte(acc)
 	valueBytes := store.Get(keyBytes)
 	var value types.Info
