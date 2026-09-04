@@ -46,10 +46,17 @@ proto-clean:
 	find x -type f -iname *.pb.gw.go -delete
 	find util -type f -iname *.pb.go -delete
 
-proto-gen:
+# Образ собирается из scripts/protocgen.Dockerfile, а не берётся готовым:
+# ghcr.io/cosmos/proto-builder недоступен из некоторых сетей, а версии
+# плагинов должны совпадать с go.mod — иначе сгенерированный код разойдётся
+# с тем, против чего собирается проект.
+proto-image:
+	"$(DOCKER)" build -f scripts/protocgen.Dockerfile -t artr-protogen .
+
+proto-gen: proto-image
 	@echo "Generating Protobuf files"
-	"$(DOCKER)" run --rm -v "$(CURDIR):/workspace" -w /workspace tendermintdev/sdk-proto-gen:v0.2 \
-		sh ./scripts/protocgen.sh
+	"$(DOCKER)" run --rm -v "$(CURDIR):/src" -w /src artr-protogen \
+		bash ./scripts/protocgen.sh
 
 proto-swagger:
 	@echo "Generating Protobuf Swagger"
