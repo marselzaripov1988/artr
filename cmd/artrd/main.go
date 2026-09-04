@@ -51,7 +51,11 @@ func main() {
 	cryptoCodec.RegisterInterfaces(ec.InterfaceRegistry)
 
 	ec.InterfaceRegistry.RegisterInterface("tendermint.crypto.PubKey", (*cryptoTypes.PubKey)(nil), &secp256k1.PubKey{})
-	ec.InterfaceRegistry.RegisterInterface("cosmos.tx.v1beta1.Tx", (*sdk.Tx)(nil), &tx.Tx{})
+	// В 0.50 транзакция регистрируется под sdk.HasMsgs, а не sdk.Tx: у
+	// последнего появились методы, которых у *tx.Tx нет, и регистрация под
+	// ним падает с "doesn't actually implement interface". Так же делает и
+	// сам SDK в types/tx.
+	ec.InterfaceRegistry.RegisterInterface("cosmos.tx.v1beta1.Tx", (*sdk.HasMsgs)(nil), &tx.Tx{})
 
 	clientCtx := ec.BuildClientContext().
 		WithInput(os.Stdin).
