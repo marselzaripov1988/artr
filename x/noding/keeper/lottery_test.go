@@ -66,7 +66,7 @@ func (s *LotterySuite) SetupTest() {
 		"artrvalconspub1zcjduepq753pcpuhu2kyugz9z4lyvye222rtjxraazxffqw9yz0rv7m270jqurvy6q",
 		"artrvalconspub1zcjduepqucxw7h4cz59c3hdnqucu702fcw556l9c5dyewkjzkjjxgvklxnzqfufx5s",
 	} {
-		s.pubKeys = append(s.pubKeys, util.MustUnmarshalConsPubKey(key))
+		s.pubKeys = append(s.pubKeys, util.MustParseConsPubKey(key))
 	}
 }
 

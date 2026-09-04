@@ -233,7 +233,7 @@ func (s *Suite) TestByzantine() {
 }
 
 func (s *Suite) TestJailing() {
-	proposerKey := util.MustUnmarshalConsPubKey(app.DefaultUser1ConsPubKey)
+	proposerKey := util.MustParseConsPubKey(app.DefaultUser1ConsPubKey)
 	_, pubkey, _ := app.NewTestConsPubAddress()
 	tmPubKey, _ := cryptocodec.ToTmProtoPublicKey(pubkey)
 	if err := s.k.SwitchOn(s.ctx, s.user(2), pubkey); err != nil {
@@ -301,7 +301,7 @@ func (s *Suite) TestJailing() {
 
 func (s *Suite) TestSwitchOnAfterSwitchOffWhileJailed() {
 	user2 := s.user(2)
-	proposerKey := util.MustUnmarshalConsPubKey(app.DefaultUser1ConsPubKey)
+	proposerKey := util.MustParseConsPubKey(app.DefaultUser1ConsPubKey)
 	_, pubkey, _ := app.NewTestConsPubAddress()
 	s.NoError(s.k.SwitchOn(s.ctx, user2, pubkey))
 
@@ -331,7 +331,7 @@ func (s *Suite) TestSwitchOnAfterSwitchOffWhileJailed() {
 }
 
 func (s Suite) TestDoubleSwitchOn() {
-	proposerKey := util.MustUnmarshalConsPubKey(app.DefaultUser1ConsPubKey)
+	proposerKey := util.MustParseConsPubKey(app.DefaultUser1ConsPubKey)
 
 	user := s.user(2)
 	_, pubkey1, _ := app.NewTestConsPubAddress()
@@ -345,7 +345,7 @@ func (s Suite) TestDoubleSwitchOn() {
 }
 
 func (s Suite) TestDoubleSwitchOnWithJail() {
-	proposerKey := util.MustUnmarshalConsPubKey(app.DefaultUser1ConsPubKey)
+	proposerKey := util.MustParseConsPubKey(app.DefaultUser1ConsPubKey)
 
 	user := s.user(2)
 	_, pubkey1, consAddr := app.NewTestConsPubAddress()
@@ -368,7 +368,7 @@ func (s Suite) TestDoubleSwitchOnWithJail() {
 }
 
 func (s Suite) TestNodeNodeLeap() {
-	proposerKey := util.MustUnmarshalConsPubKey(app.DefaultUser1ConsPubKey)
+	proposerKey := util.MustParseConsPubKey(app.DefaultUser1ConsPubKey)
 	user := s.user(2)
 	_, pubkey, _ := app.NewTestConsPubAddress()
 	tmPubKey, _ := cryptocodec.ToTmProtoPublicKey(pubkey)
@@ -422,7 +422,7 @@ func (s Suite) TestNodeNodeLeap() {
 }
 
 func (s *Suite) TestDoubleJail() {
-	proposerKey := util.MustUnmarshalConsPubKey(app.DefaultUser1ConsPubKey)
+	proposerKey := util.MustParseConsPubKey(app.DefaultUser1ConsPubKey)
 	_, pubkey, _ := app.NewTestConsPubAddress()
 	if err := s.k.SwitchOn(s.ctx, s.user(2), pubkey); err != nil {
 		panic(err)
@@ -451,7 +451,7 @@ func (s *Suite) TestDoubleJail() {
 }
 
 func (s *Suite) TestStatusDowngrade() {
-	proposerKey := util.MustUnmarshalConsPubKey(app.DefaultUser1ConsPubKey)
+	proposerKey := util.MustParseConsPubKey(app.DefaultUser1ConsPubKey)
 	tmPubKey, _ := cryptocodec.ToTmProtoPublicKey(proposerKey)
 	validator := abci.Validator{Address: proposerKey.Address().Bytes(), Power: 15}
 	votes := []abci.VoteInfo{{Validator: validator, SignedLastBlock: true}}

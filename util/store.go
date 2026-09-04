@@ -1,9 +1,7 @@
 package util
 
 import (
-	cryptoTypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	legacybech32 "github.com/cosmos/cosmos-sdk/types/bech32/legacybech32"
 )
 
 // SchemaMarkerKey — ключ служебной записи, помечающей стор как
@@ -39,18 +37,4 @@ func MarkStoreInitialized(store sdk.KVStore) {
 	if !store.Has(SchemaMarkerKey) {
 		store.Set(SchemaMarkerKey, []byte{schemaVersion})
 	}
-}
-
-// MustUnmarshalConsPubKey разбирает консенсусный ключ валидатора из bech32
-// и паникует при ошибке.
-//
-// У legacybech32 паникующего варианта нет — только UnmarshalPubKey с
-// ошибкой. В рабочем коде ошибка обрабатывается по месту, а тестам нужен
-// краткий вариант, иначе каждое обращение разрастается на четыре строки.
-func MustUnmarshalConsPubKey(bech32 string) cryptoTypes.PubKey {
-	pk, err := legacybech32.UnmarshalPubKey(legacybech32.ConsPK, bech32)
-	if err != nil {
-		panic(err)
-	}
-	return pk
 }

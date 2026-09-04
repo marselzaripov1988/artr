@@ -6,7 +6,8 @@ import (
 
 	crypto "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	legacybech32 "github.com/cosmos/cosmos-sdk/types/bech32/legacybech32"
+
+	"github.com/arterynetwork/artr/util"
 )
 
 // verify interface at compile time
@@ -25,11 +26,10 @@ func (msg MsgOn) GetAccount() sdk.AccAddress {
 }
 
 func (m MsgOn) GetPubKey() crypto.PubKey {
-	// В 0.45 у legacybech32 нет паникующего варианта разбора, а сигнатуру
-	// менять нельзя — она разошлась бы по вызывающему коду. Прежнее поведение
-	// (паника на негодном ключе) сохранено явно; ключ к этому моменту уже
-	// проверен в ValidateBasic.
-	pk, err := legacybech32.UnmarshalPubKey(legacybech32.ConsPK, m.PubKey)
+	// Сигнатура без ошибки: менять её нельзя, она разошлась бы по
+	// вызывающему коду. Паника на негодном ключе безопасна — к этому
+	// моменту он уже проверен в ValidateBasic.
+	pk, err := util.ParseConsPubKey(m.PubKey)
 	if err != nil {
 		panic(err)
 	}
@@ -55,7 +55,7 @@ func (m MsgUnjail) GetAccount() sdk.AccAddress {
 func NewMsgOn(accAddr sdk.AccAddress, pubKey crypto.PubKey) *MsgOn {
 	return &MsgOn{
 		Account: accAddr.String(),
-		PubKey:  legacybech32.MustMarshalPubKey(legacybech32.ConsPK, pubKey),
+		PubKey:  util.MustFormatConsPubKey(pubKey),
 	}
 }
 
@@ -97,7 +97,7 @@ func (msg MsgOn) ValidateBasic() error {
 	if _, err := sdk.AccAddressFromBech32(msg.Account); err != nil {
 		return errors.Wrap(err, "invalid account")
 	}
-	if _, err := legacybech32.UnmarshalPubKey(legacybech32.ConsPK, msg.PubKey); err != nil {
+	if _, err := util.ParseConsPubKey(msg.PubKey); err != nil {
 		return errors.Wrap(err, "invalid pub_key")
 	}
 	return nil

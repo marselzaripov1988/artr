@@ -58,7 +58,7 @@ func (s Suite) TestCleanGenesis() {
 func (s Suite) TestBlocksInRowAndJail() {
 	user2 := app.DefaultGenesisUsers["user2"]
 	user3 := app.DefaultGenesisUsers["user3"]
-	user1key := util.MustUnmarshalConsPubKey(app.DefaultUser1ConsPubKey)
+	user1key := util.MustParseConsPubKey(app.DefaultUser1ConsPubKey)
 	user1ca := sdk.ConsAddress(user1key.Address().Bytes())
 	_, user2key, user2ca := app.NewTestConsPubAddress()
 	_, user3key, user3ca := app.NewTestConsPubAddress()
@@ -89,7 +89,7 @@ func (s Suite) TestBlocksInRowAndJail() {
 
 func (s Suite) TestJailAndSwitchOff() {
 	user2 := app.DefaultGenesisUsers["user2"]
-	user1key := util.MustUnmarshalConsPubKey(app.DefaultUser1ConsPubKey)
+	user1key := util.MustParseConsPubKey(app.DefaultUser1ConsPubKey)
 	user1ca := sdk.ConsAddress(user1key.Address().Bytes())
 	_, user2key, user2ca := app.NewTestConsPubAddress()
 
@@ -115,7 +115,7 @@ func (s Suite) TestJailAndSwitchOff() {
 
 func (s Suite) TestUnjail() {
 	user2 := app.DefaultGenesisUsers["user2"]
-	user1key := util.MustUnmarshalConsPubKey(app.DefaultUser1ConsPubKey)
+	user1key := util.MustParseConsPubKey(app.DefaultUser1ConsPubKey)
 	user1ca := sdk.ConsAddress(user1key.Address().Bytes())
 	_, user2key, user2ca := app.NewTestConsPubAddress()
 
@@ -148,7 +148,7 @@ func (s Suite) TestUnjail() {
 func (s Suite) TestByzantine() {
 	user2 := app.DefaultGenesisUsers["user2"]
 	user3 := app.DefaultGenesisUsers["user3"]
-	user1key := util.MustUnmarshalConsPubKey(app.DefaultUser1ConsPubKey)
+	user1key := util.MustParseConsPubKey(app.DefaultUser1ConsPubKey)
 	user1ca := sdk.ConsAddress(user1key.Address().Bytes())
 	_, user2key, user2ca := app.NewTestConsPubAddress()
 	_, user3key, user3ca := app.NewTestConsPubAddress()
@@ -217,7 +217,7 @@ func (s Suite) TestStaff() {
 func (s Suite) TestProposers() {
 	user1 := app.DefaultGenesisUsers["user1"]
 	user2 := app.DefaultGenesisUsers["user2"]
-	user1key := util.MustUnmarshalConsPubKey(app.DefaultUser1ConsPubKey)
+	user1key := util.MustParseConsPubKey(app.DefaultUser1ConsPubKey)
 	_, user2key, _ := app.NewTestConsPubAddress()
 	s.NoError(s.k.SwitchOn(s.ctx, user2, user2key))
 

@@ -67,7 +67,7 @@ func (s *Suite) SetupTest() {
 
 	s.bbHeader = abci.RequestBeginBlock{
 		Header: tmproto.Header{
-			ProposerAddress: util.MustUnmarshalConsPubKey(keeper.DefaultUser1ConsPubKey).Address().Bytes(),
+			ProposerAddress: util.MustParseConsPubKey(keeper.DefaultUser1ConsPubKey).Address().Bytes(),
 		},
 	}
 }

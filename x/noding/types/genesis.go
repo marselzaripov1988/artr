@@ -4,7 +4,8 @@ import (
 	"github.com/pkg/errors"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	legacybech32 "github.com/cosmos/cosmos-sdk/types/bech32/legacybech32"
+
+	"github.com/arterynetwork/artr/util"
 )
 
 func (v Validator) GetAccount() sdk.AccAddress {
@@ -91,7 +92,7 @@ func validateActiveValidators(v []Validator) error {
 		if _, err := sdk.AccAddressFromBech32(val.Account); err != nil {
 			return errors.Wrapf(err, "invalid validator #%d: invalid account", i)
 		}
-		if _, err := legacybech32.UnmarshalPubKey(legacybech32.ConsPK, val.PubKey); err != nil {
+		if _, err := util.ParseConsPubKey(val.PubKey); err != nil {
 			return errors.Wrapf(err, "invalid validator #%d: invalid pub_key", i)
 		}
 		if val.Jailed {
@@ -125,7 +126,7 @@ func validateNonActiveValidators(v []Validator) error {
 			return errors.Wrapf(err, "invalid validator #%d: invalid account", i)
 		}
 		if len(val.PubKey) > 0 {
-			if _, err := legacybech32.UnmarshalPubKey(legacybech32.ConsPK, val.PubKey); err != nil {
+			if _, err := util.ParseConsPubKey(val.PubKey); err != nil {
 				return errors.Wrapf(err, "invalid validator #%d: invalid pub_key", i)
 			}
 		}

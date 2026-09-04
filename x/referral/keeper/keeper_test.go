@@ -73,7 +73,7 @@ func (s *BaseSuite) setupTest(genesis json.RawMessage, consPubKey string) {
 
 	s.bbHeader = abci.RequestBeginBlock{
 		Header: tmproto.Header{
-			ProposerAddress: util.MustUnmarshalConsPubKey(consPubKey).Address().Bytes(),
+			ProposerAddress: util.MustParseConsPubKey(consPubKey).Address().Bytes(),
 		},
 	}
 }
