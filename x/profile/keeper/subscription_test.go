@@ -10,9 +10,9 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	abci "github.com/cometbft/cometbft/abci/types"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 
+	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/testutil/testdata"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -39,7 +39,7 @@ type SSuite struct {
 	bk      bank.Keeper
 	sk      scheduleK.Keeper
 
-	bbHeader abci.RequestBeginBlock
+	bbHeader tmproto.Header
 }
 
 func (s *SSuite) SetupTest() {
@@ -55,10 +55,8 @@ func (s *SSuite) SetupTest() {
 	s.bk = s.app.GetBankKeeper()
 	s.sk = s.app.GetScheduleKeeper()
 
-	s.bbHeader = abci.RequestBeginBlock{
-		Header: tmproto.Header{
-			ProposerAddress: util.MustParseConsPubKey(app.DefaultUser1ConsPubKey).Address().Bytes(),
-		},
+	s.bbHeader = tmproto.Header{
+		ProposerAddress: util.MustParseConsPubKey(app.DefaultUser1ConsPubKey).Address().Bytes(),
 	}
 }
 
@@ -71,7 +69,7 @@ func (s *SSuite) TearDownTest() {
 func (s *SSuite) TestPayTariffFirstTime() {
 	_, _, addr := testdata.KeyTestPubAddr()
 	var p *types.Profile
-	s.NoError(s.bk.AddCoins(s.ctx, addr, sdk.NewCoins(sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(1_000_000000)))))
+	s.NoError(s.bk.AddCoins(s.ctx, addr, sdk.NewCoins(sdk.NewCoin(util.ConfigMainDenom, math.NewInt(1_000_000000)))))
 	s.NoError(s.k.CreateAccount(s.ctx, addr, app.DefaultGenesisUsers["root"]))
 
 	p = s.k.GetProfile(s.ctx, addr)
@@ -94,7 +92,7 @@ func (s *SSuite) TestPayTariffInAdvance() {
 	s.NotNil(p.ActiveUntil)
 	s.Equal(wasPaidUpTo, *p.ActiveUntil)
 	s.True(p.IsActive(s.ctx))
-	s.NoError(s.bk.AddCoins(s.ctx, addr, sdk.NewCoins(sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(1_000_000000)))))
+	s.NoError(s.bk.AddCoins(s.ctx, addr, sdk.NewCoins(sdk.NewCoin(util.ConfigMainDenom, math.NewInt(1_000_000000)))))
 
 	s.NoError(s.k.PayTariff(s.ctx, addr, 5, false))
 	p = s.k.GetProfile(s.ctx, addr)
@@ -113,7 +111,7 @@ func (s *SSuite) TestAutoPay() {
 	s.True(p.IsActive(s.ctx))
 	s.False(p.AutoPay)
 
-	s.NoError(s.bk.AddCoins(s.ctx, addr, sdk.NewCoins(sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(1_000_000000)))))
+	s.NoError(s.bk.AddCoins(s.ctx, addr, sdk.NewCoins(sdk.NewCoin(util.ConfigMainDenom, math.NewInt(1_000_000000)))))
 	p.AutoPay = true
 	s.NoError(s.k.SetProfile(s.ctx, addr, p))
 
@@ -152,7 +150,7 @@ func (s *SSuite) TestPayTariffWhenItIsOver() {
 	s.False(p.IsActive(s.ctx))
 	s.False(p.AutoPay)
 
-	s.NoError(s.bk.AddCoins(s.ctx, addr, sdk.NewCoins(sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(1_000_000000)))))
+	s.NoError(s.bk.AddCoins(s.ctx, addr, sdk.NewCoins(sdk.NewCoin(util.ConfigMainDenom, math.NewInt(1_000_000000)))))
 	s.NoError(s.k.PayTariff(s.ctx, addr, 5, false))
 
 	p = *s.k.GetProfile(s.ctx, addr)
@@ -450,9 +448,17 @@ func (s *SSuite) TestImExtra_AutoPay() {
 	s.EqualValues(balance-2*price, s.bk.GetBalance(s.ctx, addr).AmountOf(util.ConfigMainDenom).Int64())
 }
 
-func (s *SSuite) nextBlock() (abci.ResponseEndBlock, abci.ResponseBeginBlock) {
-	ebr := s.app.EndBlocker(s.ctx, abci.RequestEndBlock{})
-	s.ctx = s.ctx.WithBlockHeight(s.ctx.BlockHeight() + 1).WithBlockTime(s.ctx.BlockTime().Add(30 * time.Second))
-	bbr := s.app.BeginBlocker(s.ctx, s.bbHeader)
+func (s *SSuite) nextBlock() (sdk.EndBlock, sdk.BeginBlock) {
+	ebr, err := s.app.EndBlocker(s.ctx)
+	s.Require().NoError(err)
+	// Предложивший блок теперь берётся из контекста, а не из запроса.
+	// Заголовок ставится первым: WithBlockHeader заменяет его целиком, а
+	// время и высота блока хранятся именно в нём.
+	s.ctx = s.ctx.
+		WithBlockHeader(s.bbHeader).
+		WithBlockHeight(s.ctx.BlockHeight() + 1).
+		WithBlockTime(s.ctx.BlockTime().Add(30 * time.Second))
+	bbr, err := s.app.BeginBlocker(s.ctx)
+	s.Require().NoError(err)
 	return ebr, bbr
 }

@@ -9,17 +9,18 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 
+	"cosmossdk.io/log"
 	abci "github.com/cometbft/cometbft/abci/types"
-	"github.com/cometbft/cometbft/libs/log"
 	tmcrypto "github.com/cometbft/cometbft/proto/tendermint/crypto"
 
+	errorsmod "cosmossdk.io/errors"
+	"cosmossdk.io/math"
+	"cosmossdk.io/store/prefix"
+	storeTypes "cosmossdk.io/store/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	crypto "github.com/cosmos/cosmos-sdk/crypto/types"
-	"github.com/cosmos/cosmos-sdk/store/prefix"
-	storeTypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/arterynetwork/artr/util"
 	bankTypes "github.com/arterynetwork/artr/x/bank/types"
@@ -84,7 +85,7 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
-func (k Keeper) IsQualified(ctx sdk.Context, accAddr sdk.AccAddress) (result bool, delegation sdk.Int, reason types.Reason, err error) {
+func (k Keeper) IsQualified(ctx sdk.Context, accAddr sdk.AccAddress) (result bool, delegation math.Int, reason types.Reason, err error) {
 	delegation, err = k.referralKeeper.GetDelegatedInNetwork(ctx, accAddr.String(), 10)
 	if err != nil {
 		return
@@ -197,7 +198,7 @@ func (k Keeper) SwitchOn(ctx sdk.Context, accAddr sdk.AccAddress, key crypto.Pub
 	if k.has(ctx, accAddr) {
 		data, err := k.Get(ctx, accAddr)
 		if err != nil {
-			return sdkerrors.Wrapf(err, "cannot get data for %s", accAddr.String())
+			return errorsmod.Wrapf(err, "cannot get data for %s", accAddr.String())
 		}
 		if data.Status {
 			return types.ErrAlreadyOn
@@ -890,7 +891,7 @@ func (k Keeper) RemoveFromStaff(ctx sdk.Context, acc sdk.AccAddress) (err error)
 }
 
 func (k Keeper) GetBlocksProposedBy(ctx sdk.Context, acc sdk.AccAddress) (heights []uint64) {
-	it := sdk.KVStorePrefixIterator(ctx.KVStore(k.indexStoreKey), IdxPrefixBlockProposer)
+	it := storeTypes.KVStorePrefixIterator(ctx.KVStore(k.indexStoreKey), IdxPrefixBlockProposer)
 	defer it.Close()
 	for ; it.Valid(); it.Next() {
 		if bytes.Equal(it.Value(), acc.Bytes()) {
@@ -902,7 +903,7 @@ func (k Keeper) GetBlocksProposedBy(ctx sdk.Context, acc sdk.AccAddress) (height
 
 func (k Keeper) GetBlocksProposedByAll(ctx sdk.Context) (heightsByAccAddress map[string][]uint64) {
 	heightsByAccAddress = make(map[string][]uint64)
-	it := sdk.KVStorePrefixIterator(ctx.KVStore(k.indexStoreKey), IdxPrefixBlockProposer)
+	it := storeTypes.KVStorePrefixIterator(ctx.KVStore(k.indexStoreKey), IdxPrefixBlockProposer)
 	defer it.Close()
 	for ; it.Valid(); it.Next() {
 		key := sdk.AccAddress(it.Value()).String()

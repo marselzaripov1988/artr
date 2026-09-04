@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	serverTypes "github.com/cosmos/cosmos-sdk/server/types"
 
-	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
@@ -19,7 +17,9 @@ func (app *ArteryApp) ExportAppStateAndValidators(
 ) (serverTypes.ExportedApp, error) {
 
 	// as if they could withdraw from the start of the next block
-	ctx := app.NewContext(true, tmproto.Header{Height: app.LastBlockHeight()})
+	// С SDK 0.50 контекст строится без заголовка: высота берётся из
+	// самого приложения.
+	ctx := app.NewContext(true)
 
 	// We export at last height + 1, because that's the height at which
 	// Tendermint will start InitChain.
@@ -30,7 +30,10 @@ func (app *ArteryApp) ExportAppStateAndValidators(
 		app.prepForZeroHeightGenesis(ctx, jailWhiteList)
 	}
 
-	genState := app.mm.ExportGenesis(ctx, app.ec.Marshaler)
+	genState, err := app.mm.ExportGenesis(ctx, app.ec.Marshaler)
+	if err != nil {
+		return serverTypes.ExportedApp{}, err
+	}
 	appState, err := json.MarshalIndent(genState, "", "  ")
 	if err != nil {
 		return serverTypes.ExportedApp{}, err

@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/arterynetwork/artr/util"
@@ -37,7 +38,7 @@ func (k Keeper) PayTariff(ctx sdk.Context, addr sdk.AccAddress, storageGb uint32
 	}
 	// NOTE: We shouldn't use `storageGb` below this point in case it's zero.
 
-	tariffTotal := sdk.NewIntFromBigInt(p.TokenRate.MulInt64(int64(p.SubscriptionPrice)).BigInt())
+	tariffTotal := math.NewIntFromBigInt(p.TokenRate.MulInt64(int64(p.SubscriptionPrice)).BigInt())
 
 	txFeeSplitRatios := k.bankKeeper.GetParams(ctx).TransactionFeeSplitRatios
 	txFee := util.CalculateFee(tariffTotal, k.bankKeeper.GetParams(ctx).TransactionFee, k.bankKeeper.GetParams(ctx).MaxTransactionFee, txFeeSplitRatios.ForProposer, txFeeSplitRatios.ForCompany)
@@ -71,9 +72,9 @@ func (k Keeper) PayTariff(ctx sdk.Context, addr sdk.AccAddress, storageGb uint32
 		}
 	}
 
-	tariffTotal = tariffTotal.Add(sdk.NewIntFromBigInt(storageFeeFrac.BigInt()))
+	tariffTotal = tariffTotal.Add(math.NewIntFromBigInt(storageFeeFrac.BigInt()))
 	// NOTE: `tariffTotal` cannot be just assigned to `total` here, 'cause Int is a struct over a pointer.
-	total := sdk.NewIntFromBigInt(new(big.Int).Set(tariffTotal.BigInt()))
+	total := math.NewIntFromBigInt(new(big.Int).Set(tariffTotal.BigInt()))
 	tariffTotal = tariffTotal.Sub(txFee)
 
 	outputs := make([]bank.Output, 0, 4)

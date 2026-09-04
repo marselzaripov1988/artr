@@ -3,8 +3,9 @@ package keeper
 import (
 	"github.com/pkg/errors"
 
+	errorsmod "cosmossdk.io/errors"
+	storeTypes "cosmossdk.io/store/types"
 	"github.com/cosmos/cosmos-sdk/codec"
-	storeTypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -46,9 +47,9 @@ var _ SendKeeper = (*BaseSendKeeper)(nil)
 type BaseSendKeeper struct {
 	BaseViewKeeper
 
-	cdc        codec.BinaryCodec
-	ak         types.AccountKeeper
-	storeKey   storeTypes.StoreKey
+	cdc      codec.BinaryCodec
+	ak       types.AccountKeeper
+	storeKey storeTypes.StoreKey
 
 	// list of addresses that are restricted from receiving transactions
 	blockedAddrs map[string]bool
@@ -120,7 +121,7 @@ func (keeper BaseSendKeeper) SendCoins(ctx sdk.Context, fromAddr sdk.AccAddress,
 // CONTRACT: If the account is a vesting account, the amount has to be spendable.
 func (k BaseSendKeeper) SubtractCoins(ctx sdk.Context, addr sdk.AccAddress, amt sdk.Coins) error {
 	if !amt.IsValid() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidCoins, amt.String())
+		return errorsmod.Wrap(sdkerrors.ErrInvalidCoins, amt.String())
 	}
 
 	balance := k.GetBalance(ctx, addr)
@@ -128,7 +129,7 @@ func (k BaseSendKeeper) SubtractCoins(ctx sdk.Context, addr sdk.AccAddress, amt 
 
 	_, hasNeg := spendable.SafeSub(amt...)
 	if hasNeg {
-		return sdkerrors.Wrapf(sdkerrors.ErrInsufficientFunds, "%s is smaller than %s", spendable, amt)
+		return errorsmod.Wrapf(sdkerrors.ErrInsufficientFunds, "%s is smaller than %s", spendable, amt)
 	}
 
 	return errors.Wrap(k.SetBalance(ctx, addr, sdk.NewCoins(balance.Sub(amt...)...)), "cannot set balance")
@@ -137,7 +138,7 @@ func (k BaseSendKeeper) SubtractCoins(ctx sdk.Context, addr sdk.AccAddress, amt 
 // AddCoins adds amt to the coins at the addr.
 func (k BaseSendKeeper) AddCoins(ctx sdk.Context, addr sdk.AccAddress, amt sdk.Coins) error {
 	if !amt.IsValid() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidCoins, amt.String())
+		return errorsmod.Wrap(sdkerrors.ErrInvalidCoins, amt.String())
 	}
 
 	balance := k.GetBalance(ctx, addr)
@@ -157,7 +158,7 @@ func (keeper BaseSendKeeper) AddHook(event string, name string, hook func(ctx sd
 // SetBalance sets the balance (multiple coins) for an account by address. An error is returned upon failure.
 func (k BaseSendKeeper) SetBalance(ctx sdk.Context, addr sdk.AccAddress, balance sdk.Coins) error {
 	if !balance.IsValid() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidCoins, balance.String())
+		return errorsmod.Wrap(sdkerrors.ErrInvalidCoins, balance.String())
 	}
 
 	store := ctx.KVStore(k.storeKey)

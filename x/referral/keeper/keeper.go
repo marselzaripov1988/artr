@@ -6,11 +6,13 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/cometbft/cometbft/libs/log"
+	"cosmossdk.io/log"
 
+	errorsmod "cosmossdk.io/errors"
+	"cosmossdk.io/math"
+	"cosmossdk.io/store/prefix"
+	storeTypes "cosmossdk.io/store/types"
 	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/cosmos/cosmos-sdk/store/prefix"
-	storeTypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	auth "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -174,7 +176,7 @@ func (k Keeper) AddTopLevelAccount(ctx sdk.Context, acc string) (err error) {
 		}
 	}()
 	if k.exists(ctx, acc) {
-		return sdkerrors.Wrap(
+		return errorsmod.Wrap(
 			sdkerrors.ErrInvalidRequest,
 			fmt.Sprintf("account %s already exists", acc),
 		)
@@ -229,7 +231,7 @@ func (k Keeper) appendChild(ctx sdk.Context, parentAcc string, childAcc string, 
 		return types.ErrParentNil
 	}
 	if k.exists(ctx, childAcc) {
-		return sdkerrors.Wrap(
+		return errorsmod.Wrap(
 			sdkerrors.ErrInvalidRequest,
 			fmt.Sprintf("account %s already exists", childAcc),
 		)
@@ -247,7 +249,7 @@ func (k Keeper) appendChild(ctx sdk.Context, parentAcc string, childAcc string, 
 	}
 	err := bu.set(childAcc, newItem)
 	if err != nil {
-		return sdkerrors.Wrap(err, "cannot set "+childAcc)
+		return errorsmod.Wrap(err, "cannot set "+childAcc)
 	}
 
 	var registrationClosed bool
@@ -263,7 +265,7 @@ func (k Keeper) appendChild(ctx sdk.Context, parentAcc string, childAcc string, 
 		return nil
 	})
 	if err != nil {
-		return sdkerrors.Wrap(err, "cannot update "+anc)
+		return errorsmod.Wrap(err, "cannot update "+anc)
 	}
 	if registrationClosed {
 		return types.ErrRegistrationClosed
@@ -284,12 +286,12 @@ func (k Keeper) appendChild(ctx sdk.Context, parentAcc string, childAcc string, 
 			return nil
 		})
 		if err != nil {
-			return sdkerrors.Wrap(err, "cannot update "+anc)
+			return errorsmod.Wrap(err, "cannot update "+anc)
 		}
 	}
 
 	if err := bu.commit(); err != nil {
-		return sdkerrors.Wrap(err, "cannot commit")
+		return errorsmod.Wrap(err, "cannot commit")
 	}
 	return nil
 }
@@ -299,8 +301,8 @@ func (k Keeper) Compress(ctx sdk.Context, acc string) error {
 	var (
 		bu = newBunchUpdater(k, ctx)
 
-		coins      []sdk.Int
-		delegated  []sdk.Int
+		coins      []math.Int
+		delegated  []math.Int
 		children   []string
 		activeRefs []string
 		refsCount  []uint64
@@ -328,15 +330,15 @@ func (k Keeper) Compress(ctx sdk.Context, acc string) error {
 		value.Referrals = nil
 		value.ActiveReferrals = nil
 		value.ActiveRefCounts = []uint64{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-		value.Coins = []sdk.Int{
+		value.Coins = []math.Int{
 			coins[0],
-			sdk.ZeroInt(), sdk.ZeroInt(), sdk.ZeroInt(), sdk.ZeroInt(), sdk.ZeroInt(),
-			sdk.ZeroInt(), sdk.ZeroInt(), sdk.ZeroInt(), sdk.ZeroInt(), sdk.ZeroInt(),
+			math.ZeroInt(), math.ZeroInt(), math.ZeroInt(), math.ZeroInt(), math.ZeroInt(),
+			math.ZeroInt(), math.ZeroInt(), math.ZeroInt(), math.ZeroInt(), math.ZeroInt(),
 		}
-		value.Delegated = []sdk.Int{
+		value.Delegated = []math.Int{
 			delegated[0],
-			sdk.ZeroInt(), sdk.ZeroInt(), sdk.ZeroInt(), sdk.ZeroInt(), sdk.ZeroInt(),
-			sdk.ZeroInt(), sdk.ZeroInt(), sdk.ZeroInt(), sdk.ZeroInt(), sdk.ZeroInt(),
+			math.ZeroInt(), math.ZeroInt(), math.ZeroInt(), math.ZeroInt(), math.ZeroInt(),
+			math.ZeroInt(), math.ZeroInt(), math.ZeroInt(), math.ZeroInt(), math.ZeroInt(),
 		}
 		value.CompressionAt = nil
 		bu.addCallback(StakeChangedCallback, acc)
@@ -409,13 +411,13 @@ func (k Keeper) Compress(ctx sdk.Context, acc string) error {
 // GetCoinsInNetwork returns total amount of coins (delegated and not) in a person's network
 // (at levels that are open according the person's current status, but no deeper than `maxDepth` levels down).
 // Own coins inclusive. maxDepth = 0 means no limits.
-func (k Keeper) GetCoinsInNetwork(ctx sdk.Context, acc string, maxDepth int) (sdk.Int, error) {
+func (k Keeper) GetCoinsInNetwork(ctx sdk.Context, acc string, maxDepth int) (math.Int, error) {
 	if maxDepth <= 0 {
 		maxDepth = 10
 	}
 	data, err := k.Get(ctx, acc)
 	if err != nil {
-		return sdk.Int{}, err
+		return math.Int{}, err
 	}
 	d := data.Status.LinesOpened()
 	if d > maxDepth {
@@ -427,10 +429,10 @@ func (k Keeper) GetCoinsInNetwork(ctx sdk.Context, acc string, maxDepth int) (sd
 // GetDelegatedInNetwork returns total amount of delegated coins in a person's network
 // (at levels that are open according the person's current status, but no deeper than `maxDepth` levels down).
 // Own coins inclusive.
-func (k Keeper) GetDelegatedInNetwork(ctx sdk.Context, acc string, maxDepth int) (sdk.Int, error) {
+func (k Keeper) GetDelegatedInNetwork(ctx sdk.Context, acc string, maxDepth int) (math.Int, error) {
 	data, err := k.Get(ctx, acc)
 	if err != nil {
-		return sdk.Int{}, err
+		return math.Int{}, err
 	}
 	d := data.Status.LinesOpened()
 	if d > maxDepth {
@@ -444,7 +446,7 @@ func (k Keeper) OnBalanceChanged(ctx sdk.Context, acc string) error {
 	var (
 		bu = newBunchUpdater(k, ctx)
 
-		dc, dd   sdk.Int
+		dc, dd   math.Int
 		node     string
 		banished bool
 	)
@@ -910,7 +912,7 @@ func (k Keeper) AffirmTransition(ctx sdk.Context, subject string) error {
 // (nil, nil) if the account is OK, but a transition is not requested.
 func (k Keeper) GetPendingTransition(ctx sdk.Context, acc string) (string, error) {
 	if acc == "" {
-		return "", sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "account address is missing")
+		return "", errorsmod.Wrap(sdkerrors.ErrInvalidAddress, "account address is missing")
 	}
 	r, err := k.Get(ctx, acc)
 	if err != nil {
@@ -924,7 +926,7 @@ func (k Keeper) Banish(ctx sdk.Context, acc string) error {
 	bu := newBunchUpdater(k, ctx)
 	var (
 		parent   string
-		c, d     sdk.Int
+		c, d     math.Int
 		banished bool
 	)
 	if err := bu.update(acc, false, func(value *types.Info) error {
@@ -1019,7 +1021,7 @@ func (k Keeper) ComeBack(ctx sdk.Context, acc string) error {
 	bu := newBunchUpdater(k, ctx)
 
 	var parent string
-	var c, d sdk.Int
+	var c, d math.Int
 	if err := bu.update(acc, false, func(value *types.Info) error {
 		for parent = value.Referrer; parent != ""; {
 			pi, err := bu.get(parent)
@@ -1190,7 +1192,7 @@ func (k Keeper) update(ctx sdk.Context, acc string, callback func(value types.In
 	return nil
 }
 
-func (k Keeper) getBalance(ctx sdk.Context, acc string) sdk.Int {
+func (k Keeper) getBalance(ctx sdk.Context, acc string) math.Int {
 	if acc, err := sdk.AccAddressFromBech32(acc); err != nil {
 		panic(err)
 	} else {
@@ -1201,7 +1203,7 @@ func (k Keeper) getBalance(ctx sdk.Context, acc string) sdk.Int {
 	}
 }
 
-func (k Keeper) getDelegated(ctx sdk.Context, acc string) sdk.Int {
+func (k Keeper) getDelegated(ctx sdk.Context, acc string) math.Int {
 	if acc, err := sdk.AccAddressFromBech32(acc); err != nil {
 		panic(err)
 	} else {
@@ -1241,7 +1243,7 @@ func setOrUpdate(m map[string]bank.Output, key sdk.AccAddress, amt int64) {
 	if item, ok := m[keyStr]; ok {
 		amt += item.Coins.AmountOf(util.ConfigMainDenom).Int64()
 	}
-	m[keyStr] = bank.NewOutput(key, sdk.NewCoins(sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(amt))))
+	m[keyStr] = bank.NewOutput(key, sdk.NewCoins(sdk.NewCoin(util.ConfigMainDenom, math.NewInt(amt))))
 }
 
 // ScheduleCompression adds a record to scheduler, but does *NOT* affect referral's own KVStore.

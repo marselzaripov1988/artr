@@ -10,6 +10,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/suite"
 
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/arterynetwork/artr/app"
@@ -54,10 +55,10 @@ func (s Suite) TestCleanGenesis() {
 
 func (s Suite) TestDelegateAndRevoke() {
 	user1 := app.DefaultGenesisUsers["user1"]
-	if err := s.k.Delegate(s.ctx, user1, sdk.NewInt(10_000000)); err != nil {
+	if err := s.k.Delegate(s.ctx, user1, math.NewInt(10_000000)); err != nil {
 		panic(err)
 	}
-	if err := s.k.Revoke(s.ctx, user1, sdk.NewInt(5_000000), false); err != nil {
+	if err := s.k.Revoke(s.ctx, user1, math.NewInt(5_000000), false); err != nil {
 		panic(err)
 	}
 	s.checkExportImport()
@@ -65,12 +66,12 @@ func (s Suite) TestDelegateAndRevoke() {
 
 func (s *Suite) TestRevokeAll() {
 	user := app.DefaultGenesisUsers["user1"]
-	s.NoError(s.k.Delegate(s.ctx, user, sdk.NewInt(10_000000)))
+	s.NoError(s.k.Delegate(s.ctx, user, math.NewInt(10_000000)))
 	s.Equal(
 		int64(20_009_970000),
 		s.app.GetBankKeeper().GetBalance(s.ctx, user).AmountOf(util.ConfigDelegatedDenom).Int64(),
 	) // -tx_fee -15%
-	s.NoError(s.k.Revoke(s.ctx, user, sdk.NewInt(9_970000), false))
+	s.NoError(s.k.Revoke(s.ctx, user, math.NewInt(9_970000), false))
 
 	s.Equal(
 		int64(20_000_000000),

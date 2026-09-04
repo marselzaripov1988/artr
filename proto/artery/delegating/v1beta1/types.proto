@@ -12,7 +12,7 @@ message RevokeRequest {
     (gogoproto.nullable) = false
   ];
   string amount = 2 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable)   = false
   ];
 }

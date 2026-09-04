@@ -1,6 +1,7 @@
 package util
 
 import (
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
@@ -20,9 +21,9 @@ const (
 )
 
 func Uartrs(n int64) sdk.Coins {
-	return sdk.NewCoins(sdk.NewCoin(ConfigMainDenom, sdk.NewInt(n)))
+	return sdk.NewCoins(sdk.NewCoin(ConfigMainDenom, math.NewInt(n)))
 }
 
 func UartrsUint64(n uint64) sdk.Coins {
-	return sdk.NewCoins(sdk.NewCoin(ConfigMainDenom, sdk.NewIntFromUint64(n)))
+	return sdk.NewCoins(sdk.NewCoin(ConfigMainDenom, math.NewIntFromUint64(n)))
 }

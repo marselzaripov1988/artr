@@ -1,6 +1,7 @@
 package types
 
 import (
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/golang/protobuf/proto"
@@ -32,23 +33,23 @@ func (msg MsgSend) Type() string { return "send" }
 // ValidateBasic Implements Msg.
 func (msg MsgSend) ValidateBasic() error {
 	if len(msg.FromAddress) == 0 {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing sender address")
+		return errorsmod.Wrap(sdkerrors.ErrInvalidAddress, "missing sender address")
 	}
 	if _, err := sdk.AccAddressFromBech32(msg.FromAddress); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "invalid sender address: "+err.Error())
+		return errorsmod.Wrap(sdkerrors.ErrInvalidAddress, "invalid sender address: "+err.Error())
 	}
 	if len(msg.ToAddress) == 0 {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "missing recipient address")
+		return errorsmod.Wrap(sdkerrors.ErrInvalidAddress, "missing recipient address")
 	}
 	if _, err := sdk.AccAddressFromBech32(msg.ToAddress); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "invalid recipient address: "+err.Error())
+		return errorsmod.Wrap(sdkerrors.ErrInvalidAddress, "invalid recipient address: "+err.Error())
 	}
 	coins := sdk.Coins(msg.Amount)
 	if !coins.IsValid() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidCoins, coins.String())
+		return errorsmod.Wrap(sdkerrors.ErrInvalidCoins, coins.String())
 	}
 	if !coins.IsAllPositive() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidCoins, coins.String())
+		return errorsmod.Wrap(sdkerrors.ErrInvalidCoins, coins.String())
 	}
 	return nil
 }
@@ -77,10 +78,10 @@ func (MsgBurn) Type() string { return "burn" }
 
 func (msg MsgBurn) ValidateBasic() error {
 	if _, err := sdk.AccAddressFromBech32(msg.Account); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "invalid account address: "+err.Error())
+		return errorsmod.Wrap(sdkerrors.ErrInvalidAddress, "invalid account address: "+err.Error())
 	}
 	if msg.Amount <= 0 {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidCoins, "amount must be positive")
+		return errorsmod.Wrap(sdkerrors.ErrInvalidCoins, "amount must be positive")
 	}
 	return nil
 }

@@ -9,15 +9,15 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 
-	"github.com/cometbft/cometbft/libs/log"
+	"cosmossdk.io/log"
 
+	errorsmod "cosmossdk.io/errors"
+	"cosmossdk.io/store/cachekv"
+	"cosmossdk.io/store/prefix"
+	storeTypes "cosmossdk.io/store/types"
+	upgrade "cosmossdk.io/x/upgrade/types"
 	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/cosmos/cosmos-sdk/store/cachekv"
-	"github.com/cosmos/cosmos-sdk/store/prefix"
-	storeTypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	upgrade "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
 	"github.com/arterynetwork/artr/util"
 	"github.com/arterynetwork/artr/x/voting/types"
@@ -155,7 +155,7 @@ func (k Keeper) Validate(gov types.Government,
 	return complete, agreed
 }
 
-func (k Keeper) SaveProposalToHistory(ctx sdk.Context, store sdk.KVStore) {
+func (k Keeper) SaveProposalToHistory(ctx sdk.Context, store storeTypes.KVStore) {
 	history := types.ProposalHistoryRecord{
 		Proposal:   *k.GetCurrentProposal(ctx),
 		Government: k.GetGovernment(ctx).Members,
@@ -410,7 +410,7 @@ func (k Keeper) ProcessSchedule(ctx sdk.Context, _ []byte, _ time.Time) {
 func (k Keeper) GetHistory(ctx sdk.Context, limit int32, page int32) []types.ProposalHistoryRecord {
 	store := ctx.KVStore(k.storeKey)
 
-	iterator := sdk.KVStorePrefixIterator(store, types.KeyHistoryPrefix)
+	iterator := storeTypes.KVStorePrefixIterator(store, types.KeyHistoryPrefix)
 	defer iterator.Close()
 
 	records := make([]types.ProposalHistoryRecord, 0)
@@ -492,7 +492,7 @@ func (k Keeper) Vote(ctx sdk.Context, voter sdk.AccAddress, agree bool) error {
 
 	disagreed := k.GetDisagreed(ctx)
 	if disagreed.Contains(voter) {
-		return sdkerrors.Wrap(types.ErrAlreadyVoted, voter.String())
+		return errorsmod.Wrap(types.ErrAlreadyVoted, voter.String())
 	}
 
 	if agree {
@@ -672,7 +672,7 @@ func (k Keeper) EndPoll(ctx sdk.Context) {
 	store.Delete(types.KeyPollCurrent)
 	store.Delete(types.KeyPollYesCount)
 	store.Delete(types.KeyPollNoCount)
-	it := sdk.KVStorePrefixIterator(store, types.KeyPollAnswers)
+	it := storeTypes.KVStorePrefixIterator(store, types.KeyPollAnswers)
 	for ; it.Valid(); it.Next() {
 		store.Delete(it.Key())
 	}
@@ -687,14 +687,14 @@ func (k Keeper) GetPollHistoryAll(ctx sdk.Context) []types.PollHistoryItem {
 func (k Keeper) GetPollHistory(ctx sdk.Context, limit int32, page int32) []types.PollHistoryItem {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), types.KeyPollPrefix)
 	var (
-		it  sdk.Iterator
+		it  storeTypes.Iterator
 		res []types.PollHistoryItem
 	)
 	if limit > 0 {
-		it = sdk.KVStorePrefixIteratorPaginated(store, types.KeyPollHistory, uint(page), uint(limit))
+		it = storeTypes.KVStorePrefixIteratorPaginated(store, types.KeyPollHistory, uint(page), uint(limit))
 		res = make([]types.PollHistoryItem, 0, limit)
 	} else {
-		it = sdk.KVStorePrefixIterator(store, types.KeyPollHistory)
+		it = storeTypes.KVStorePrefixIterator(store, types.KeyPollHistory)
 	}
 	for ; it.Valid(); it.Next() {
 		var item types.PollHistoryItem
@@ -711,7 +711,7 @@ func (k Keeper) IterateThroughCurrentPollAnswers(ctx sdk.Context, callback func(
 		return types.ErrNoActivePoll
 	}
 
-	it := sdk.KVStorePrefixIterator(store, types.KeyPollAnswers)
+	it := storeTypes.KVStorePrefixIterator(store, types.KeyPollAnswers)
 	defer func() {
 		it.Close()
 		if e := recover(); e != nil {

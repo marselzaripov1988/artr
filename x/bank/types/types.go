@@ -1,6 +1,7 @@
 package types
 
 import (
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
@@ -14,13 +15,13 @@ type Input struct {
 // ValidateBasic - validate transaction input
 func (in Input) ValidateBasic() error {
 	if len(in.Address) == 0 {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "input address missing")
+		return errorsmod.Wrap(sdkerrors.ErrInvalidAddress, "input address missing")
 	}
 	if !in.Coins.IsValid() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidCoins, in.Coins.String())
+		return errorsmod.Wrap(sdkerrors.ErrInvalidCoins, in.Coins.String())
 	}
 	if !in.Coins.IsAllPositive() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidCoins, in.Coins.String())
+		return errorsmod.Wrap(sdkerrors.ErrInvalidCoins, in.Coins.String())
 	}
 	return nil
 }
@@ -42,13 +43,13 @@ type Output struct {
 // ValidateBasic - validate transaction output
 func (out Output) ValidateBasic() error {
 	if len(out.Address) == 0 {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "output address missing")
+		return errorsmod.Wrap(sdkerrors.ErrInvalidAddress, "output address missing")
 	}
 	if !out.Coins.IsValid() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidCoins, out.Coins.String())
+		return errorsmod.Wrap(sdkerrors.ErrInvalidCoins, out.Coins.String())
 	}
 	if !out.Coins.IsAllPositive() {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidCoins, out.Coins.String())
+		return errorsmod.Wrap(sdkerrors.ErrInvalidCoins, out.Coins.String())
 	}
 	return nil
 }
@@ -83,7 +84,7 @@ func ValidateInputsOutputs(inputs []Input, outputs []Output) error {
 	}
 
 	// make sure inputs and outputs match
-	if !totalIn.IsEqual(totalOut) {
+	if !totalIn.Equal(totalOut) {
 		return ErrInputOutputMismatch
 	}
 

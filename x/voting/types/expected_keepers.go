@@ -1,11 +1,13 @@
 package types
 
 import (
+	"context"
 	"time"
 
+	"cosmossdk.io/math"
+	upgrade "cosmossdk.io/x/upgrade/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
-	upgrade "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
 	bank "github.com/arterynetwork/artr/x/bank/types"
 	"github.com/arterynetwork/artr/x/delegating"
@@ -28,8 +30,8 @@ type ScheduleKeeper interface {
 }
 
 type UprgadeKeeper interface {
-	ScheduleUpgrade(ctx sdk.Context, plan upgrade.Plan) error
-	ClearUpgradePlan(ctx sdk.Context)
+	ScheduleUpgrade(ctx context.Context, plan upgrade.Plan) error
+	ClearUpgradePlan(ctx context.Context) error
 }
 
 type NodingKeeper interface {
@@ -41,7 +43,7 @@ type NodingKeeper interface {
 
 	GeneralAmnesty(ctx sdk.Context)
 
-	IsQualified(ctx sdk.Context, accAddr sdk.AccAddress) (result bool, delegation sdk.Int, reason noding.Reason, err error)
+	IsQualified(ctx sdk.Context, accAddr sdk.AccAddress) (result bool, delegation math.Int, reason noding.Reason, err error)
 }
 
 type DelegatingKeeper interface {

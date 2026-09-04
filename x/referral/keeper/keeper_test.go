@@ -14,12 +14,12 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/suite"
 
-	abci "github.com/cometbft/cometbft/abci/types"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 
+	"cosmossdk.io/math"
+	"cosmossdk.io/store/prefix"
+	storeTypes "cosmossdk.io/store/types"
 	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/cosmos/cosmos-sdk/store/prefix"
-	storeTypes "github.com/cosmos/cosmos-sdk/store/types"
 	"github.com/cosmos/cosmos-sdk/testutil/testdata"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authK "github.com/cosmos/cosmos-sdk/x/auth/keeper"
@@ -53,7 +53,7 @@ type BaseSuite struct {
 	bk       bank.Keeper
 	storeKey storeTypes.StoreKey
 
-	bbHeader abci.RequestBeginBlock
+	bbHeader tmproto.Header
 }
 
 func (s *BaseSuite) setupTest(genesis json.RawMessage, consPubKey string) {
@@ -71,10 +71,8 @@ func (s *BaseSuite) setupTest(genesis json.RawMessage, consPubKey string) {
 	s.bk = s.app.GetBankKeeper()
 	s.storeKey = s.app.GetKeys()[referral.ModuleName]
 
-	s.bbHeader = abci.RequestBeginBlock{
-		Header: tmproto.Header{
-			ProposerAddress: util.MustParseConsPubKey(consPubKey).Address().Bytes(),
-		},
+	s.bbHeader = tmproto.Header{
+		ProposerAddress: util.MustParseConsPubKey(consPubKey).Address().Bytes(),
 	}
 }
 
@@ -106,8 +104,8 @@ func (s *Suite) SetupTest() {
 var (
 	THOUSAND = util.Uartrs(1_000_000000)
 	STAKE    = sdk.NewCoins(
-		sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(1_000_000000)),
-		sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(20_000_000000)),
+		sdk.NewCoin(util.ConfigMainDenom, math.NewInt(1_000_000000)),
+		sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(20_000_000000)),
 	)
 )
 
@@ -119,12 +117,12 @@ func (s *Suite) TestAppendChild() {
 		s.NoError(
 			s.setBalance(addr, sdk.Coins{sdk.Coin{
 				Denom:  util.ConfigMainDenom,
-				Amount: sdk.NewInt(1 << i),
+				Amount: math.NewInt(1 << i),
 			}}),
 		)
 	}
 
-	s.NoError(s.set(accounts[0], types.NewInfo("", sdk.NewInt(1), sdk.ZeroInt())))
+	s.NoError(s.set(accounts[0], types.NewInfo("", math.NewInt(1), math.ZeroInt())))
 	s.NoError(s.k.SetActive(s.ctx, accounts[0], true, true))
 
 	for i := 0; i <= 10; i++ {
@@ -196,8 +194,8 @@ func (s *Suite) TestGetters() {
 			Status:    types.STATUS_TOP_LEADER,
 			Referrer:  parent.String(),
 			Referrals: []string{child1.String(), child2.String()},
-			//			Coins:                [11]sdk.Int{},
-			//			Delegated:            [11]sdk.Int{},
+			//			Coins:                [11]math.Int{},
+			//			Delegated:            [11]math.Int{},
 			//			Active:               false,
 			//			ActiveReferralsCount: [11]int{},
 		}),
@@ -225,11 +223,11 @@ func (s *Suite) TestGetCoinsInNetwork() {
 			s.setBalance(addr, sdk.Coins{
 				sdk.Coin{
 					Denom:  util.ConfigMainDenom,
-					Amount: sdk.NewInt(1 << (2 * i)),
+					Amount: math.NewInt(1 << (2 * i)),
 				},
 				sdk.Coin{
 					Denom:  util.ConfigDelegatedDenom,
-					Amount: sdk.NewInt(1 << (2*i + 1)),
+					Amount: math.NewInt(1 << (2*i + 1)),
 				},
 			}),
 		)
@@ -238,8 +236,8 @@ func (s *Suite) TestGetCoinsInNetwork() {
 		Status:          types.STATUS_LUCKY,
 		Active:          true,
 		ActiveRefCounts: []uint64{1},
-		Coins:           []sdk.Int{sdk.NewInt(3)},
-		Delegated:       []sdk.Int{sdk.NewInt(2)},
+		Coins:           []math.Int{math.NewInt(3)},
+		Delegated:       []math.Int{math.NewInt(2)},
 	}))
 
 	//                  0
@@ -294,26 +292,26 @@ func (s *Suite) TestCompression() {
 			s.setBalance(addr, sdk.Coins{
 				sdk.Coin{
 					Denom:  util.ConfigMainDenom,
-					Amount: sdk.NewInt(1 << (2 * i)),
+					Amount: math.NewInt(1 << (2 * i)),
 				},
 				sdk.Coin{
 					Denom:  util.ConfigDelegatedDenom,
-					Amount: sdk.NewInt(1 << (2*i + 1)),
+					Amount: math.NewInt(1 << (2*i + 1)),
 				},
 			}),
 		)
 	}
-	zero := sdk.ZeroInt()
+	zero := math.ZeroInt()
 	s.NoError(s.set(accounts[0], types.Info{
 		Status:          types.STATUS_LUCKY,
 		Active:          true,
 		ActiveRefCounts: []uint64{1},
-		Coins: []sdk.Int{
-			sdk.NewInt(3),
+		Coins: []math.Int{
+			math.NewInt(3),
 			zero, zero, zero, zero, zero, zero, zero, zero, zero, zero,
 		},
-		Delegated: []sdk.Int{
-			sdk.NewInt(2),
+		Delegated: []math.Int{
+			math.NewInt(2),
 			zero, zero, zero, zero, zero, zero, zero, zero, zero, zero,
 		},
 	}))
@@ -362,18 +360,18 @@ func (s *Suite) TestCompression() {
 				accounts[1],
 				accounts[9],
 			},
-			Coins: []sdk.Int{
-				sdk.NewInt(0x000003),
-				sdk.NewInt(0x0C000C),
-				sdk.NewInt(0x030F30),
-				sdk.NewInt(0x00F0C0),
+			Coins: []math.Int{
+				math.NewInt(0x000003),
+				math.NewInt(0x0C000C),
+				math.NewInt(0x030F30),
+				math.NewInt(0x00F0C0),
 				zero, zero, zero, zero, zero, zero, zero,
 			},
-			Delegated: []sdk.Int{
-				sdk.NewInt(0x000002),
-				sdk.NewInt(0x080008),
-				sdk.NewInt(0x020A20),
-				sdk.NewInt(0x00A080),
+			Delegated: []math.Int{
+				math.NewInt(0x000002),
+				math.NewInt(0x080008),
+				math.NewInt(0x020A20),
+				math.NewInt(0x00A080),
 				zero, zero, zero, zero, zero, zero, zero,
 			},
 		},
@@ -393,16 +391,16 @@ func (s *Suite) TestCompression() {
 				accounts[5],
 				accounts[8],
 			},
-			Coins: []sdk.Int{
-				sdk.NewInt(0x00000C),
-				sdk.NewInt(0x030F30),
-				sdk.NewInt(0x00F0C0),
+			Coins: []math.Int{
+				math.NewInt(0x00000C),
+				math.NewInt(0x030F30),
+				math.NewInt(0x00F0C0),
 				zero, zero, zero, zero, zero, zero, zero, zero,
 			},
-			Delegated: []sdk.Int{
-				sdk.NewInt(0x000008),
-				sdk.NewInt(0x020A20),
-				sdk.NewInt(0x00A080),
+			Delegated: []math.Int{
+				math.NewInt(0x000008),
+				math.NewInt(0x020A20),
+				math.NewInt(0x00A080),
 				zero, zero, zero, zero, zero, zero, zero, zero,
 			},
 		},
@@ -417,14 +415,14 @@ func (s *Suite) TestCompression() {
 			ActiveReferrals: []string{
 				accounts[3],
 			},
-			Coins: []sdk.Int{
-				sdk.NewInt(0x000030),
-				sdk.NewInt(0x0000C0),
+			Coins: []math.Int{
+				math.NewInt(0x000030),
+				math.NewInt(0x0000C0),
 				zero, zero, zero, zero, zero, zero, zero, zero, zero,
 			},
-			Delegated: []sdk.Int{
-				sdk.NewInt(0x000020),
-				sdk.NewInt(0x000080),
+			Delegated: []math.Int{
+				math.NewInt(0x000020),
+				math.NewInt(0x000080),
 				zero, zero, zero, zero, zero, zero, zero, zero, zero,
 			},
 		},
@@ -433,12 +431,12 @@ func (s *Suite) TestCompression() {
 			Active:          true,
 			Referrer:        accounts[2],
 			ActiveRefCounts: []uint64{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-			Coins: []sdk.Int{
-				sdk.NewInt(0x0000C0),
+			Coins: []math.Int{
+				math.NewInt(0x0000C0),
 				zero, zero, zero, zero, zero, zero, zero, zero, zero, zero,
 			},
-			Delegated: []sdk.Int{
-				sdk.NewInt(0x000080),
+			Delegated: []math.Int{
+				math.NewInt(0x000080),
 				zero, zero, zero, zero, zero, zero, zero, zero, zero, zero,
 			},
 		},
@@ -447,12 +445,12 @@ func (s *Suite) TestCompression() {
 			Active:          false,
 			Referrer:        accounts[1],
 			ActiveRefCounts: []uint64{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-			Coins: []sdk.Int{
-				sdk.NewInt(0x000300),
+			Coins: []math.Int{
+				math.NewInt(0x000300),
 				zero, zero, zero, zero, zero, zero, zero, zero, zero, zero,
 			},
-			Delegated: []sdk.Int{
-				sdk.NewInt(0x000200),
+			Delegated: []math.Int{
+				math.NewInt(0x000200),
 				zero, zero, zero, zero, zero, zero, zero, zero, zero, zero,
 			},
 		},
@@ -469,14 +467,14 @@ func (s *Suite) TestCompression() {
 				accounts[6],
 				accounts[7],
 			},
-			Coins: []sdk.Int{
-				sdk.NewInt(0x000C00),
-				sdk.NewInt(0x00F000),
+			Coins: []math.Int{
+				math.NewInt(0x000C00),
+				math.NewInt(0x00F000),
 				zero, zero, zero, zero, zero, zero, zero, zero, zero,
 			},
-			Delegated: []sdk.Int{
-				sdk.NewInt(0x000800),
-				sdk.NewInt(0x00A000),
+			Delegated: []math.Int{
+				math.NewInt(0x000800),
+				math.NewInt(0x00A000),
 				zero, zero, zero, zero, zero, zero, zero, zero, zero,
 			},
 		},
@@ -485,12 +483,12 @@ func (s *Suite) TestCompression() {
 			Active:          true,
 			Referrer:        accounts[5],
 			ActiveRefCounts: []uint64{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-			Coins: []sdk.Int{
-				sdk.NewInt(0x003000),
+			Coins: []math.Int{
+				math.NewInt(0x003000),
 				zero, zero, zero, zero, zero, zero, zero, zero, zero, zero,
 			},
-			Delegated: []sdk.Int{
-				sdk.NewInt(0x002000),
+			Delegated: []math.Int{
+				math.NewInt(0x002000),
 				zero, zero, zero, zero, zero, zero, zero, zero, zero, zero,
 			},
 		},
@@ -499,12 +497,12 @@ func (s *Suite) TestCompression() {
 			Active:          true,
 			Referrer:        accounts[5],
 			ActiveRefCounts: []uint64{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-			Coins: []sdk.Int{
-				sdk.NewInt(0x00C000),
+			Coins: []math.Int{
+				math.NewInt(0x00C000),
 				zero, zero, zero, zero, zero, zero, zero, zero, zero, zero,
 			},
-			Delegated: []sdk.Int{
-				sdk.NewInt(0x008000),
+			Delegated: []math.Int{
+				math.NewInt(0x008000),
 				zero, zero, zero, zero, zero, zero, zero, zero, zero, zero,
 			},
 		},
@@ -513,12 +511,12 @@ func (s *Suite) TestCompression() {
 			Active:          true,
 			Referrer:        accounts[1],
 			ActiveRefCounts: []uint64{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-			Coins: []sdk.Int{
-				sdk.NewInt(0x030000),
+			Coins: []math.Int{
+				math.NewInt(0x030000),
 				zero, zero, zero, zero, zero, zero, zero, zero, zero, zero,
 			},
-			Delegated: []sdk.Int{
-				sdk.NewInt(0x020000),
+			Delegated: []math.Int{
+				math.NewInt(0x020000),
 				zero, zero, zero, zero, zero, zero, zero, zero, zero, zero,
 			},
 		},
@@ -527,12 +525,12 @@ func (s *Suite) TestCompression() {
 			Active:          true,
 			Referrer:        accounts[0],
 			ActiveRefCounts: []uint64{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-			Coins: []sdk.Int{
-				sdk.NewInt(0x0C0000),
+			Coins: []math.Int{
+				math.NewInt(0x0C0000),
 				zero, zero, zero, zero, zero, zero, zero, zero, zero, zero,
 			},
-			Delegated: []sdk.Int{
-				sdk.NewInt(0x080000),
+			Delegated: []math.Int{
+				math.NewInt(0x080000),
 				zero, zero, zero, zero, zero, zero, zero, zero, zero, zero,
 			},
 		},
@@ -556,11 +554,11 @@ func (s *Suite) TestAddChildJustBeforeCompression() {
 			s.setBalance(addr, sdk.Coins{
 				sdk.Coin{
 					Denom:  util.ConfigMainDenom,
-					Amount: sdk.NewInt(1 << (2 * i)),
+					Amount: math.NewInt(1 << (2 * i)),
 				},
 				sdk.Coin{
 					Denom:  util.ConfigDelegatedDenom,
-					Amount: sdk.NewInt(1 << (2*i + 1)),
+					Amount: math.NewInt(1 << (2*i + 1)),
 				},
 			}),
 		)
@@ -599,11 +597,11 @@ func (s *Suite) TestAddChildAfterCompression() {
 			s.setBalance(addr, sdk.Coins{
 				sdk.Coin{
 					Denom:  util.ConfigMainDenom,
-					Amount: sdk.NewInt(1 << (2 * i)),
+					Amount: math.NewInt(1 << (2 * i)),
 				},
 				sdk.Coin{
 					Denom:  util.ConfigDelegatedDenom,
-					Amount: sdk.NewInt(1 << (2*i + 1)),
+					Amount: math.NewInt(1 << (2*i + 1)),
 				},
 			}),
 		)
@@ -642,11 +640,11 @@ func (s *Suite) TestAddChildAfterReactivation() {
 			s.setBalance(addr, sdk.Coins{
 				sdk.Coin{
 					Denom:  util.ConfigMainDenom,
-					Amount: sdk.NewInt(1 << (2 * i)),
+					Amount: math.NewInt(1 << (2 * i)),
 				},
 				sdk.Coin{
 					Denom:  util.ConfigDelegatedDenom,
-					Amount: sdk.NewInt(1 << (2*i + 1)),
+					Amount: math.NewInt(1 << (2*i + 1)),
 				},
 			}),
 		)
@@ -735,8 +733,8 @@ func (s Suite) TestTransition() {
 	s.NoError(s.k.RequestTransition(s.ctx, subj.String(), dest.String()), "request transition")
 	s.Equal(
 		sdk.NewCoins(
-			sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(990_000000)),
-			sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(20_000_000000)),
+			sdk.NewCoin(util.ConfigMainDenom, math.NewInt(990_000000)),
+			sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(20_000_000000)),
 		),
 		s.bk.GetBalance(s.ctx, subj),
 	)
@@ -744,8 +742,8 @@ func (s Suite) TestTransition() {
 	s.NoError(s.k.AffirmTransition(s.ctx, subj.String()), "affirm transition")
 	s.Equal(
 		sdk.NewCoins(
-			sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(990_000000)),
-			sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(20_000_000000)),
+			sdk.NewCoin(util.ConfigMainDenom, math.NewInt(990_000000)),
+			sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(20_000_000000)),
 		),
 		s.bk.GetBalance(s.ctx, subj),
 	)
@@ -806,7 +804,7 @@ func (s Suite) TestTransition() {
 	} {
 		cz, err := s.k.GetCoinsInNetwork(s.ctx, app.DefaultGenesisUsers[fmt.Sprintf("user%d", i+1)].String(), 10)
 		s.NoError(err, "get coins of user%d", i+1)
-		s.Equal(sdk.NewInt(n), cz, "coins of user%d", i+1)
+		s.Equal(math.NewInt(n), cz, "coins of user%d", i+1)
 	}
 }
 
@@ -818,8 +816,8 @@ func (s Suite) TestTransition_Decline() {
 	s.NoError(s.k.RequestTransition(s.ctx, subj.String(), dest.String()), "request transition")
 	s.Equal(
 		sdk.NewCoins(
-			sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(990_000000)),
-			sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(20_000_000000)),
+			sdk.NewCoin(util.ConfigMainDenom, math.NewInt(990_000000)),
+			sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(20_000_000000)),
 		),
 		s.bk.GetBalance(s.ctx, subj),
 	)
@@ -827,8 +825,8 @@ func (s Suite) TestTransition_Decline() {
 	s.NoError(s.k.CancelTransition(s.ctx, subj.String(), false), "decline transition")
 	s.Equal(
 		sdk.NewCoins(
-			sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(990_000000)),
-			sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(20_000_000000)),
+			sdk.NewCoin(util.ConfigMainDenom, math.NewInt(990_000000)),
+			sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(20_000_000000)),
 		),
 		s.bk.GetBalance(s.ctx, subj),
 	)
@@ -879,7 +877,7 @@ func (s Suite) TestTransition_Decline() {
 	} {
 		cz, err := s.k.GetCoinsInNetwork(s.ctx, app.DefaultGenesisUsers[fmt.Sprintf("user%d", i+1)].String(), 10)
 		s.NoError(err, "get coins of user%d", i+1)
-		s.Equal(sdk.NewInt(n), cz, "coins of user%d", i+1)
+		s.Equal(math.NewInt(n), cz, "coins of user%d", i+1)
 	}
 }
 
@@ -892,8 +890,8 @@ func (s Suite) TestTransition_Timeout() {
 	s.NoError(s.k.RequestTransition(s.ctx, subj.String(), dest.String()), "request transition")
 	s.Equal(
 		sdk.NewCoins(
-			sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(990_000000)),
-			sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(20_000_000000)),
+			sdk.NewCoin(util.ConfigMainDenom, math.NewInt(990_000000)),
+			sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(20_000_000000)),
 		),
 		s.bk.GetBalance(s.ctx, subj),
 	)
@@ -902,8 +900,8 @@ func (s Suite) TestTransition_Timeout() {
 		STAKE,
 		STAKE, STAKE,
 		sdk.NewCoins(
-			sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(990_000000)),
-			sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(20_000_000000)),
+			sdk.NewCoin(util.ConfigMainDenom, math.NewInt(990_000000)),
+			sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(20_000_000000)),
 		), STAKE, STAKE, STAKE, // transition fee
 		THOUSAND, THOUSAND, THOUSAND, THOUSAND, THOUSAND, THOUSAND, THOUSAND, THOUSAND,
 	} {
@@ -918,20 +916,20 @@ func (s Suite) TestTransition_Timeout() {
 	} {
 		cz, err := s.k.GetCoinsInNetwork(s.ctx, app.DefaultGenesisUsers[fmt.Sprintf("user%d", i+1)].String(), 10)
 		s.NoError(err, "get coins of user%d", i+1)
-		s.Equal(sdk.NewInt(n), cz, "coins of user%d", i+1)
+		s.Equal(math.NewInt(n), cz, "coins of user%d", i+1)
 	}
 
 	s.ctx = s.ctx.WithBlockHeight(util.BlocksOneDay).WithBlockTime(genesisTime.Add(24 * time.Hour))
 	s.nextBlock()
 	for i, n := range []sdk.Coins{
 		sdk.NewCoins(
-			sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(1_010_000000)),
-			sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(20_000_000000)),
+			sdk.NewCoin(util.ConfigMainDenom, math.NewInt(1_010_000000)),
+			sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(20_000_000000)),
 		), // validator's award
 		STAKE, STAKE,
 		sdk.NewCoins(
-			sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(990_000000)),
-			sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(20_000_000000)),
+			sdk.NewCoin(util.ConfigMainDenom, math.NewInt(990_000000)),
+			sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(20_000_000000)),
 		), STAKE, STAKE, STAKE,
 		THOUSAND, THOUSAND, THOUSAND, THOUSAND, THOUSAND, THOUSAND, THOUSAND, THOUSAND,
 	} {
@@ -985,7 +983,7 @@ func (s Suite) TestTransition_Timeout() {
 	} {
 		cz, err := s.k.GetCoinsInNetwork(s.ctx, app.DefaultGenesisUsers[fmt.Sprintf("user%d", i+1)].String(), 10)
 		s.NoError(err, "get coins of user%d", i+1)
-		s.Equal(sdk.NewInt(n), cz, "coins of user%d", i+1)
+		s.Equal(math.NewInt(n), cz, "coins of user%d", i+1)
 	}
 }
 
@@ -999,8 +997,8 @@ func (s Suite) TestTransition_Validate_Circle() {
 	)
 	s.Equal(
 		sdk.NewCoins(
-			sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(1_000_000000)),
-			sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(20_000_000000)),
+			sdk.NewCoin(util.ConfigMainDenom, math.NewInt(1_000_000000)),
+			sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(20_000_000000)),
 		),
 		s.bk.GetBalance(s.ctx, subj),
 	)
@@ -1015,8 +1013,8 @@ func (s Suite) TestTransition_Validate_Self() {
 	)
 	s.Equal(
 		sdk.NewCoins(
-			sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(1_000_000000)),
-			sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(20_000_000000)),
+			sdk.NewCoin(util.ConfigMainDenom, math.NewInt(1_000_000000)),
+			sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(20_000_000000)),
 		),
 		s.bk.GetBalance(s.ctx, subj),
 	)
@@ -1032,8 +1030,8 @@ func (s Suite) TestTransition_Validate_OldParent() {
 	)
 	s.Equal(
 		sdk.NewCoins(
-			sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(1_000_000000)),
-			sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(20_000_000000)),
+			sdk.NewCoin(util.ConfigMainDenom, math.NewInt(1_000_000000)),
+			sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(20_000_000000)),
 		),
 		s.bk.GetBalance(s.ctx, subj),
 	)
@@ -1064,7 +1062,7 @@ func (s Suite) TestBanishment() {
 	s.Zero(len(info.Referrals))
 	s.Equal(types.STATUS_LUCKY, info.Status)
 
-	s.NoError(s.dk.Revoke(s.ctx, app.DefaultGenesisUsers["user2"], sdk.NewInt(20_000_000000), false))
+	s.NoError(s.dk.Revoke(s.ctx, app.DefaultGenesisUsers["user2"], math.NewInt(20_000_000000), false))
 
 	s.ctx = s.ctx.WithBlockHeight(9000 + 3*util.BlocksOneMonth).WithBlockTime(genesisTime.Add(9000*30*time.Second + 3*30*24*time.Hour))
 	s.NoError(s.pk.PayTariff(s.ctx, parent, 5, false))
@@ -1121,7 +1119,7 @@ func (s Suite) TestBanishment_Undelegation() {
 	s.Equal(parent.String(), info.Referrer)
 	s.Nil(info.BanishmentAt)
 
-	s.NoError(s.dk.Revoke(s.ctx, app.DefaultGenesisUsers["user2"], sdk.NewInt(20_000_000000), false))
+	s.NoError(s.dk.Revoke(s.ctx, app.DefaultGenesisUsers["user2"], math.NewInt(20_000_000000), false))
 
 	info, err = s.get(user)
 	s.NoError(err)
@@ -1155,7 +1153,7 @@ func (s Suite) TestBanishment_DelegationAfterCompression() {
 	s.NotZero(len(info.Referrals))
 	s.Equal(types.STATUS_LEADER, info.Status)
 
-	s.NoError(s.dk.Revoke(s.ctx, app.DefaultGenesisUsers["user2"], sdk.NewInt(20_000_000000), false))
+	s.NoError(s.dk.Revoke(s.ctx, app.DefaultGenesisUsers["user2"], math.NewInt(20_000_000000), false))
 
 	s.ctx = s.ctx.WithBlockHeight(9000 + 2*util.BlocksOneMonth).WithBlockTime(genesisTime.Add(9000*30*time.Second + 2*30*24*time.Hour))
 	s.NoError(s.pk.PayTariff(s.ctx, parent, 5, false))
@@ -1172,7 +1170,7 @@ func (s Suite) TestBanishment_DelegationAfterCompression() {
 	s.NoError(s.pk.PayTariff(s.ctx, parent, 5, false))
 	s.nextBlock()
 
-	s.NoError(s.dk.Delegate(s.ctx, app.DefaultGenesisUsers["user2"], sdk.NewInt(1_000_000000)))
+	s.NoError(s.dk.Delegate(s.ctx, app.DefaultGenesisUsers["user2"], math.NewInt(1_000_000000)))
 
 	s.ctx = s.ctx.WithBlockHeight(9000 + 3*util.BlocksOneMonth).WithBlockTime(genesisTime.Add(9000*30*time.Second + 3*30*24*time.Hour))
 	s.NoError(s.pk.PayTariff(s.ctx, parent, 5, false))
@@ -1193,7 +1191,7 @@ func (s Suite) TestComeBack() {
 	user := app.DefaultGenesisUsers["user2"].String()
 	parent := app.DefaultGenesisUsers["user1"]
 
-	s.NoError(s.dk.Revoke(s.ctx, app.DefaultGenesisUsers["user2"], sdk.NewInt(20_000_000000), false))
+	s.NoError(s.dk.Revoke(s.ctx, app.DefaultGenesisUsers["user2"], math.NewInt(20_000_000000), false))
 
 	s.ctx = s.ctx.WithBlockHeight(9000).WithBlockTime(genesisTime.Add(9000 * 30 * time.Second))
 	s.NoError(s.pk.PayTariff(s.ctx, parent, 5, false))
@@ -1349,7 +1347,7 @@ func (s Suite) TestComeBackViaDelegation() {
 	user := app.DefaultGenesisUsers["user2"]
 	parent := app.DefaultGenesisUsers["user1"]
 
-	s.NoError(s.dk.Revoke(s.ctx, user, sdk.NewInt(20_000_000000), false))
+	s.NoError(s.dk.Revoke(s.ctx, user, math.NewInt(20_000_000000), false))
 
 	s.ctx = s.ctx.WithBlockHeight(8999).WithBlockTime(genesisTime.Add(8999 * 30 * time.Second))
 	s.NoError(s.pk.PayTariff(s.ctx, parent, 5, false))
@@ -1377,7 +1375,7 @@ func (s Suite) TestComeBackViaDelegation() {
 	s.NoError(s.pk.PayTariff(s.ctx, parent, 5, false))
 	s.nextBlock()
 
-	s.NoError(s.dk.Delegate(s.ctx, user, sdk.NewInt(25_000000)))
+	s.NoError(s.dk.Delegate(s.ctx, user, math.NewInt(25_000000)))
 
 	info, err = s.get(user.String())
 	s.NoError(err)
@@ -1428,19 +1426,19 @@ func (s *StatusUpgradeSuite) TestStatusUpgradeDowngrade() {
 	s.Equal(referral.StatusChampion, status)
 
 	// Jump to next level
-	s.NoError(s.bk.SetBalance(s.ctx, s.heads[0], sdk.NewCoins(sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(300_000_000000)))))
+	s.NoError(s.bk.SetBalance(s.ctx, s.heads[0], sdk.NewCoins(sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(300_000_000000)))))
 	status, err = s.k.GetStatus(s.ctx, root.String())
 	s.NoError(err)
 	s.Equal(referral.StatusBusinessman, status)
 
 	// Jump several levels at once
-	s.NoError(s.bk.SetBalance(s.ctx, s.heads[0], sdk.NewCoins(sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(1_500_000_000000)))))
+	s.NoError(s.bk.SetBalance(s.ctx, s.heads[0], sdk.NewCoins(sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(1_500_000_000000)))))
 	status, err = s.k.GetStatus(s.ctx, root.String())
 	s.NoError(err)
 	s.Equal(referral.StatusTopLeader, status)
 
 	// Step back
-	s.NoError(s.bk.SetBalance(s.ctx, s.heads[0], sdk.NewCoins(sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(300_000_000000)))))
+	s.NoError(s.bk.SetBalance(s.ctx, s.heads[0], sdk.NewCoins(sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(300_000_000000)))))
 	status, err = s.k.GetStatus(s.ctx, root.String())
 	s.NoError(err)
 	s.Equal(referral.StatusTopLeader, status)
@@ -1452,7 +1450,7 @@ func (s *StatusUpgradeSuite) TestStatusUpgradeDowngrade() {
 	s.Equal(genesisTime.Add(2*24*time.Hour), *data.StatusDowngradeAt)
 
 	// Jump to the top (downgrade should be cancelled)
-	s.NoError(s.bk.SetBalance(s.ctx, s.heads[0], sdk.NewCoins(sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(100_000_000_000000)))))
+	s.NoError(s.bk.SetBalance(s.ctx, s.heads[0], sdk.NewCoins(sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(100_000_000_000000)))))
 	status, err = s.k.GetStatus(s.ctx, root.String())
 	s.NoError(err)
 	s.Equal(referral.StatusAbsoluteChampion, status)
@@ -1595,10 +1593,18 @@ func (s *BaseSuite) update(acc string, callback func(*types.Info)) error {
 	return nil
 }
 
-func (s *BaseSuite) nextBlock() (abci.ResponseEndBlock, abci.ResponseBeginBlock) {
-	ebr := s.app.EndBlocker(s.ctx, abci.RequestEndBlock{})
-	s.ctx = s.ctx.WithBlockHeight(s.ctx.BlockHeight() + 1).WithBlockTime(s.ctx.BlockTime().Add(30 * time.Second))
-	bbr := s.app.BeginBlocker(s.ctx, s.bbHeader)
+func (s *BaseSuite) nextBlock() (sdk.EndBlock, sdk.BeginBlock) {
+	ebr, err := s.app.EndBlocker(s.ctx)
+	s.Require().NoError(err)
+	// Предложивший блок теперь берётся из контекста, а не из запроса.
+	// Заголовок ставится первым: WithBlockHeader заменяет его целиком, а
+	// время и высота блока хранятся именно в нём.
+	s.ctx = s.ctx.
+		WithBlockHeader(s.bbHeader).
+		WithBlockHeight(s.ctx.BlockHeight() + 1).
+		WithBlockTime(s.ctx.BlockTime().Add(30 * time.Second))
+	bbr, err := s.app.BeginBlocker(s.ctx)
+	s.Require().NoError(err)
 	return ebr, bbr
 }
 

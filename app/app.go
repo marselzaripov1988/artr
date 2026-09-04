@@ -10,24 +10,29 @@ import (
 	"github.com/pkg/errors"
 	"github.com/rakyll/statik/fs"
 
-	dbm "github.com/cometbft/cometbft-db"
+	"cosmossdk.io/log"
 	abci "github.com/cometbft/cometbft/abci/types"
 	tmjson "github.com/cometbft/cometbft/libs/json"
-	"github.com/cometbft/cometbft/libs/log"
 	tmos "github.com/cometbft/cometbft/libs/os"
+	dbm "github.com/cosmos/cosmos-db"
 
+	storeTypes "cosmossdk.io/store/types"
+	"cosmossdk.io/x/upgrade"
+	upgradeKeeper "cosmossdk.io/x/upgrade/keeper"
+	upgradeTypes "cosmossdk.io/x/upgrade/types"
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/grpc/cmtservice"
 	nodeService "github.com/cosmos/cosmos-sdk/client/grpc/node"
-	"github.com/cosmos/cosmos-sdk/client/grpc/tmservice"
 	"github.com/cosmos/cosmos-sdk/codec"
+	authCodec "github.com/cosmos/cosmos-sdk/codec/address"
 	codecTypes "github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	cryptoTypes "github.com/cosmos/cosmos-sdk/crypto/types"
+	"github.com/cosmos/cosmos-sdk/runtime"
 	"github.com/cosmos/cosmos-sdk/server/api"
 	config2 "github.com/cosmos/cosmos-sdk/server/config"
 	serverTypes "github.com/cosmos/cosmos-sdk/server/types"
-	storeTypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/version"
@@ -38,9 +43,6 @@ import (
 	authTypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	consensusKeeper "github.com/cosmos/cosmos-sdk/x/consensus/keeper"
 	consensusTypes "github.com/cosmos/cosmos-sdk/x/consensus/types"
-	"github.com/cosmos/cosmos-sdk/x/upgrade"
-	upgradeKeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
-	upgradeTypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 
 	_ "github.com/arterynetwork/artr/client/docs/statik"
 	"github.com/arterynetwork/artr/util"
@@ -164,12 +166,18 @@ func NewArteryApp(
 	// С 0.47 параметры консенсуса живут в x/consensus, а не в подпространстве
 	// x/params. Право менять их отдано модулю upgrade: своего гова у Artery
 	// нет, а адрес модуля никому не принадлежит.
+	// С 0.50 кееперы SDK принимают не ключ стора, а службу доступа к нему:
+	// стор перестал быть частью типа и стал зависимостью. Свои модули
+	// Artery по-прежнему работают с ключами напрямую.
 	app.consensusKeeper = consensusKeeper.NewKeeper(
 		ec.Marshaler,
-		keys[consensusTypes.StoreKey],
+		runtime.NewKVStoreService(keys[consensusTypes.StoreKey]),
 		authTypes.NewModuleAddress(upgradeTypes.ModuleName).String(),
+		runtime.EventService{},
 	)
-	bApp.SetParamStore(&app.consensusKeeper)
+	// Хранилищем параметров для baseapp служит коллекция внутри кеепера:
+	// в 0.50 сам кеепер интерфейсу ParamStore уже не отвечает.
+	bApp.SetParamStore(app.consensusKeeper.ParamsStore)
 
 	// Scheduler handles block height based tasks
 	app.scheduleKeeper = scheduleKeeper.NewKeeper(
@@ -180,14 +188,14 @@ func NewArteryApp(
 	//app.scheduleKeeper.AddHook("event-test", func(ctx sdk.Context, data []byte) {
 	//	ctx.Logger().Error("test event called")
 	//	addr, _ := sdk.AccAddressFromBech32("cosmos1ey3aa0uxndvdrvgyvsd0afyt69uet9avw7cseq")
-	//	coins := sdk.NewCoins(sdk.NewCoin("artr", sdk.NewInt(1000)))
+	//	coins := sdk.NewCoins(sdk.NewCoin("artr", math.NewInt(1000)))
 	//	app.bankKeeper.AddCoins(ctx, addr, coins)
 	//})
 
 	// The AccountKeeper handles address -> account lookups
 	app.accountKeeper = authKeeper.NewAccountKeeper(
 		ec.Marshaler,
-		keys[authTypes.StoreKey],
+		runtime.NewKVStoreService(keys[authTypes.StoreKey]),
 		authTypes.ProtoBaseAccount,
 		map[string][]string{
 			authTypes.FeeCollectorName:        {},
@@ -196,7 +204,9 @@ func NewArteryApp(
 			earningTypes.StorageCollectorName: {},
 			earningTypes.ModuleName:           {},
 		},
-		// SDK 0.46 требует bech32-префикс аккаунтов; 0.47 добавил authority.
+		// SDK 0.50 добавил кодек адресов: разбор bech32 вынесен из глобального
+		// конфига в явную зависимость.
+		authCodec.NewBech32Codec(Bech32PrefixAccAddr),
 		Bech32PrefixAccAddr,
 		authTypes.NewModuleAddress(upgradeTypes.ModuleName).String(),
 	)
@@ -246,7 +256,7 @@ func NewArteryApp(
 
 	app.upgradeKeeper = upgradeKeeper.NewKeeper(
 		map[int64]bool{},
-		keys[upgradeTypes.StoreKey],
+		runtime.NewKVStoreService(keys[upgradeTypes.StoreKey]),
 		ec.Marshaler,
 		"",
 		// SDK 0.43 добавил пятым аргументом ProtocolVersionSetter — через него
@@ -334,7 +344,7 @@ func NewArteryApp(
 		schedule.NewAppModule(app.scheduleKeeper),
 		auth.NewAppModule(ec.Marshaler, app.accountKeeper, nil, nil),
 		bank.NewAppModule(app.bankKeeper, app.accountKeeper),
-		upgrade.NewAppModule(app.upgradeKeeper),
+		upgrade.NewAppModule(app.upgradeKeeper, authCodec.NewBech32Codec(Bech32PrefixAccAddr)),
 		profile.NewAppModule(app.profileKeeper, app.accountKeeper),
 		referral.NewAppModule(
 			*app.referralKeeper, app.accountKeeper, app.scheduleKeeper, app.bankKeeper, app.bankKeeper,
@@ -429,7 +439,7 @@ func NewArteryApp(
 	anteHandler, err := ante.NewAnteHandler(
 		ante.HandlerOptions{
 			AccountKeeper:   app.accountKeeper,
-			BankKeeper:      app.bankKeeper,
+			BankKeeper:      bankForAnte{k: app.bankKeeper},
 			SignModeHandler: ec.TxConfig.SignModeHandler(),
 			SigGasConsumer:  ante.DefaultSigVerificationGasConsumer,
 		},
@@ -471,11 +481,15 @@ func NewDefaultGenesisState(mrshl codec.JSONCodec) GenesisState {
 }
 
 // InitChainer application update at chain initialization
-func (app *ArteryApp) InitChainer(ctx sdk.Context, req abci.RequestInitChain) abci.ResponseInitChain {
+//
+// С SDK 0.50 запрос приходит указателем, а ответ возвращается вместе с
+// ошибкой: паника внутри InitChain перестала быть единственным способом
+// сообщить о негодном генезисе.
+func (app *ArteryApp) InitChainer(ctx sdk.Context, req *abci.RequestInitChain) (*abci.ResponseInitChain, error) {
 	var genesisState GenesisState
 
 	if err := tmjson.Unmarshal(req.AppStateBytes, &genesisState); err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	// Карта версий модулей — основа системы миграций x/upgrade начиная с
@@ -483,19 +497,25 @@ func (app *ArteryApp) InitChainer(ctx sdk.Context, req abci.RequestInitChain) ab
 	// модуля и по расхождению запускает миграцию. Без этого вызова карта
 	// не записывается, стор модуля upgrade остаётся пустым, а пустое
 	// IAVL-дерево с 0.46 ломает любой запрос состояния.
-	app.upgradeKeeper.SetModuleVersionMap(ctx, app.mm.GetVersionMap())
+	if err := app.upgradeKeeper.SetModuleVersionMap(ctx, app.mm.GetVersionMap()); err != nil {
+		return nil, err
+	}
 
 	return app.mm.InitGenesis(ctx, app.ec.Marshaler, genesisState)
 }
 
 // BeginBlocker application updates every begin block
-func (app *ArteryApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
-	return app.mm.BeginBlock(ctx, req)
+//
+// В ABCI 2.0 запроса на входе нет: BeginBlock и EndBlock свёрнуты в
+// FinalizeBlock, данные о блоке приходят через контекст, а результатом
+// стали события и ошибка.
+func (app *ArteryApp) BeginBlocker(ctx sdk.Context) (sdk.BeginBlock, error) {
+	return app.mm.BeginBlock(ctx)
 }
 
 // EndBlocker application updates every end block
-func (app *ArteryApp) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci.ResponseEndBlock {
-	return app.mm.EndBlock(ctx, req)
+func (app *ArteryApp) EndBlocker(ctx sdk.Context) (sdk.EndBlock, error) {
+	return app.mm.EndBlock(ctx)
 }
 
 // LoadHeight loads a particular height
@@ -528,7 +548,7 @@ func (app *ArteryApp) RegisterAPIRoutes(server *api.Server, apiConfig config2.AP
 	// удалён из SDK в 0.46.
 	authtx.RegisterGRPCGatewayRoutes(clientCtx, server.GRPCGatewayRouter)
 	// Register new tendermint queries routes from grpc-gateway.
-	tmservice.RegisterGRPCGatewayRoutes(clientCtx, server.GRPCGatewayRouter)
+	cmtservice.RegisterGRPCGatewayRoutes(clientCtx, server.GRPCGatewayRouter)
 
 	// Register grpc-gateway routes for all modules.
 	ModuleBasics.RegisterGRPCGatewayRoutes(clientCtx, server.GRPCGatewayRouter)
@@ -544,13 +564,13 @@ func (app *ArteryApp) RegisterTxService(clientCtx client.Context) {
 
 // RegisterNodeService — требование интерфейса server/types.Application
 // начиная с SDK 0.47.
-func (app *ArteryApp) RegisterNodeService(clientCtx client.Context) {
-	nodeService.RegisterNodeService(clientCtx, app.GRPCQueryRouter())
+func (app *ArteryApp) RegisterNodeService(clientCtx client.Context, cfg config2.Config) {
+	nodeService.RegisterNodeService(clientCtx, app.GRPCQueryRouter(), cfg)
 }
 
 func (app *ArteryApp) RegisterTendermintService(clientCtx client.Context) {
 	// В 0.46 порядок аргументов изменён и добавлена функция ABCI-запроса.
-	tmservice.RegisterTendermintService(
+	cmtservice.RegisterTendermintService(
 		clientCtx,
 		app.BaseApp.GRPCQueryRouter(),
 		app.ec.InterfaceRegistry,
@@ -588,7 +608,7 @@ func RegisterSwaggerAPI(rtr *mux.Router) {
 func newKVStoreKeys(names ...string) map[string]*storeTypes.KVStoreKey {
 	keys := make(map[string]*storeTypes.KVStoreKey, len(names))
 	for _, name := range names {
-		keys[name] = sdk.NewKVStoreKey(name)
+		keys[name] = storeTypes.NewKVStoreKey(name)
 	}
 	return keys
 }

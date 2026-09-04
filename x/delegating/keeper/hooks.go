@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/arterynetwork/artr/x/delegating/types"
@@ -97,8 +98,8 @@ func (k Keeper) MustPerformAccrue(ctx sdk.Context, payload []byte, time time.Tim
 			interestToValidator -= data.MissedPart.MulInt64(interestToValidator).Int64()
 			data.MissedPart = nil
 		}
-		k.accrue(ctx, acc, sdk.NewInt(interest), bonusFlags)
-		k.accrueToValidator(ctx, acc, sdk.NewInt(interestToValidator))
+		k.accrue(ctx, acc, math.NewInt(interest), bonusFlags)
+		k.accrueToValidator(ctx, acc, math.NewInt(interestToValidator))
 		*data.NextAccrue = time.Add(k.scheduleKeeper.OneDay(ctx))
 		k.scheduleKeeper.ScheduleTask(ctx, *data.NextAccrue, types.AccrueHookName, acc)
 	}

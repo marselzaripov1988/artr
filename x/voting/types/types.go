@@ -4,6 +4,7 @@ import (
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
 
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/arterynetwork/artr/util"
@@ -257,7 +258,7 @@ func (p Proposal) validate(historical bool) error {
 			return errors.Errorf("invalid args: %s, should be in [0; 1]", forCompany.String())
 		} else if forProposer, forCompany := args.Portions.Fractions[0], args.Portions.Fractions[1]; forProposer.Add(forCompany).GT(util.FractionInt(1)) {
 			return errors.Errorf("invalid args: %s and %s sums must be less than or equal 1", forProposer.String(), forCompany.String())
-		} else if forProposer, forCompany := args.Portions.Fractions[0], args.Portions.Fractions[1]; util.CalculateTransactionFeeSplitRatiosLCM(forProposer, forCompany).GT(sdk.NewInt(util.TransactionFeeSplitRatiosMaxLcm)) {
+		} else if forProposer, forCompany := args.Portions.Fractions[0], args.Portions.Fractions[1]; util.CalculateTransactionFeeSplitRatiosLCM(forProposer, forCompany).GT(math.NewInt(util.TransactionFeeSplitRatiosMaxLcm)) {
 			return errors.Errorf("invalid args: %s and %s LCM must be less than or equal %d", forProposer.String(), forCompany.String(), util.TransactionFeeSplitRatiosMaxLcm)
 		}
 	case

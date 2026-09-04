@@ -1,7 +1,7 @@
 package util
 
 import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	storeTypes "cosmossdk.io/store/types"
 )
 
 // SchemaMarkerKey — ключ служебной записи, помечающей стор как
@@ -33,7 +33,7 @@ const schemaVersion byte = 1
 //
 // Сторы с параметрами в этом не нуждаются: параметры пишутся при
 // InitGenesis и сами по себе делают дерево непустым.
-func MarkStoreInitialized(store sdk.KVStore) {
+func MarkStoreInitialized(store storeTypes.KVStore) {
 	if !store.Has(SchemaMarkerKey) {
 		store.Set(SchemaMarkerKey, []byte{schemaVersion})
 	}

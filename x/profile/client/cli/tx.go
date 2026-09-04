@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
+	errorsmod "cosmossdk.io/errors"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
@@ -74,7 +75,7 @@ func cmdCreateAccount() *cobra.Command {
 					com := strings.Split(strings.TrimSpace(val), ":")
 
 					if len(com) != 2 {
-						return sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, "invalid parameter string "+val)
+						return errorsmod.Wrap(sdkerrors.ErrUnknownRequest, "invalid parameter string "+val)
 					}
 
 					switch strings.ToLower(com[0]) {
@@ -131,7 +132,7 @@ func cmdUpdateProfile() *cobra.Command {
 					com := strings.Split(strings.TrimSpace(val), ":")
 
 					if len(com) != 2 {
-						return sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, "invalid parameter string "+val)
+						return errorsmod.Wrap(sdkerrors.ErrUnknownRequest, "invalid parameter string "+val)
 					}
 
 					switch strings.ToLower(com[0]) {

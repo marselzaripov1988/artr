@@ -127,17 +127,13 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, mrshl codec.JSONCodec) json.R
 	return mrshl.MustMarshalJSON(gs)
 }
 
-// BeginBlock returns the begin blocker for the earning module.
-func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {}
-
-// EndBlock returns the end blocker for the earning module. It returns no validator
-// updates.
-func (AppModule) EndBlock(_ sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
-	return []abci.ValidatorUpdate{}
-}
-
 // ConsensusVersion версия схемы состояния модуля. Требование SDK 0.43+:
 // менеджер модулей сравнивает её с записанной в сторе и по расхождению
 // запускает зарегистрированные миграции. Единица — исходная версия, с
 // которой модуль входит в новую схему.
 func (AppModule) ConsensusVersion() uint64 { return 1 }
+
+// IsAppModule и IsOnePerModuleType — метки appmodule.AppModule из SDK 0.50:
+// пустые методы, которыми модуль объявляет себя модулем.
+func (AppModule) IsAppModule()        {}
+func (AppModule) IsOnePerModuleType() {}

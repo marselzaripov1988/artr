@@ -19,21 +19,19 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 
-	dbm "github.com/cometbft/cometbft-db"
-	abci "github.com/cometbft/cometbft/abci/types"
+	"cosmossdk.io/log"
 	tmjson "github.com/cometbft/cometbft/libs/json"
-	"github.com/cometbft/cometbft/libs/log"
-	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	tmtypes "github.com/cometbft/cometbft/types"
+	dbm "github.com/cosmos/cosmos-db"
 
+	storeTypes "cosmossdk.io/store/types"
+	upgradeKeeper "cosmossdk.io/x/upgrade/keeper"
 	"github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	crypto "github.com/cosmos/cosmos-sdk/crypto/types"
-	storeTypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/kv"
 	authKeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
-	upgradeKeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 
 	"github.com/arterynetwork/artr/x/bank"
 	"github.com/arterynetwork/artr/x/delegating"
@@ -70,12 +68,12 @@ func (app ArteryApp) GetEarningKeeper() earning.Keeper           { return app.ea
 func NewAppFromGenesis(genesis []byte) (app *ArteryApp, cleanup func(), ctx sdk.Context) {
 	var logger log.Logger
 	if verbose {
-		logger = log.TestingLogger()
+		logger = log.NewLogger(os.Stderr)
 	} else {
 		logger = log.NewNopLogger()
 	}
 	dir, _ := ioutil.TempDir("", "goleveldb-app-sim")
-	db, _ := dbm.NewGoLevelDB("Simulation", dir)
+	db, _ := dbm.NewGoLevelDB("Simulation", dir, nil)
 
 	cleanup = func() {
 		_ = db.Close()
@@ -115,8 +113,10 @@ func NewAppFromGenesis(genesis []byte) (app *ArteryApp, cleanup func(), ctx sdk.
 		panic(err)
 	}
 
-	ctx = app.NewContext(true, tmproto.Header{}).WithBlockTime(genesisDoc.GenesisTime).WithBlockHeight(genesisDoc.InitialHeight)
-	app.mm.InitGenesis(ctx, ec.Marshaler, genesisState)
+	ctx = app.NewContext(true).WithBlockTime(genesisDoc.GenesisTime).WithBlockHeight(genesisDoc.InitialHeight)
+	if _, err := app.mm.InitGenesis(ctx, ec.Marshaler, genesisState); err != nil {
+		panic(errors.Wrap(err, "cannot init genesis"))
+	}
 
 	return app, cleanup, ctx
 }
@@ -177,8 +177,10 @@ func TimeDecoder(bz []byte) (string, error) {
 }
 
 func (app ArteryApp) CheckExportImport(t *testing.T, time time.Time, storeKeys []string, keyDecoders, valueDecoders map[string]Decoder, ignorePrefixes map[string][][]byte) {
-	ctx := app.NewContext(true, tmproto.Header{Height: app.LastBlockHeight(), Time: time})
-	app.EndBlocker(ctx, abci.RequestEndBlock{Height: ctx.BlockHeight()})
+	ctx := app.NewContext(true).WithBlockHeight(app.LastBlockHeight()).WithBlockTime(time)
+	if _, err := app.EndBlocker(ctx); err != nil {
+		t.Fatalf("EndBlocker: %v", err)
+	}
 	ctx = ctx.WithBlockHeight(ctx.BlockHeight() + 1)
 
 	appState, err := app.ExportAppStateAndValidators(false, nil, nil)
@@ -190,12 +192,12 @@ func (app ArteryApp) CheckExportImport(t *testing.T, time time.Time, storeKeys [
 
 	var logger log.Logger
 	if verbose {
-		logger = log.TestingLogger()
+		logger = log.NewLogger(os.Stderr)
 	} else {
 		logger = log.NewNopLogger()
 	}
 	dir, _ := ioutil.TempDir("", "goleveldb-app-sim-2")
-	db, _ := dbm.NewGoLevelDB("Simulation-2", dir)
+	db, _ := dbm.NewGoLevelDB("Simulation-2", dir, nil)
 
 	defer func() {
 		_ = db.Close()
@@ -209,8 +211,10 @@ func (app ArteryApp) CheckExportImport(t *testing.T, time time.Time, storeKeys [
 	}
 	ensureActiveValidator(genesisState)
 
-	ctx2 := app2.NewContext(true, tmproto.Header{Height: app2.LastBlockHeight(), Time: time})
-	app2.mm.InitGenesis(ctx2, app2.ec.Marshaler, genesisState)
+	ctx2 := app2.NewContext(true).WithBlockHeight(app2.LastBlockHeight()).WithBlockTime(time)
+	if _, err := app2.mm.InitGenesis(ctx2, app2.ec.Marshaler, genesisState); err != nil {
+		t.Fatalf("InitGenesis: %v", err)
+	}
 
 	for _, key := range storeKeys {
 		store1 := ctx.KVStore(app.GetKeys()[key])
@@ -374,7 +378,7 @@ func decodeKVTriples(kvz []kvTriple, keyDecoder func([]byte) (string, error), va
 	return result
 }
 
-func diffKVStores(a, b sdk.KVStore, ignore [][]byte) (kvAs, kvBs []kv.Pair) {
+func diffKVStores(a, b storeTypes.KVStore, ignore [][]byte) (kvAs, kvBs []kv.Pair) {
 	iterA := a.Iterator(nil, nil)
 	iterB := b.Iterator(nil, nil)
 

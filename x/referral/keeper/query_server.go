@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	storeTypes "cosmossdk.io/store/types"
 
 	"github.com/pkg/errors"
 	"google.golang.org/grpc/codes"
@@ -95,7 +96,7 @@ func (qs QueryServer) AllWithStatus(ctx context.Context, req *types.AllWithStatu
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 
 	store := sdkCtx.KVStore(qs.indexStoreKey)
-	it := sdk.KVStorePrefixIterator(store, []byte{byte(req.Status)})
+	it := storeTypes.KVStorePrefixIterator(store, []byte{byte(req.Status)})
 	defer it.Close()
 	resp := types.AllWithStatusResponse{}
 	for ; it.Valid(); it.Next() {

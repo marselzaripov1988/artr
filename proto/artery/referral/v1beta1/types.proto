@@ -56,7 +56,7 @@ message Info {
   // Coins - total amount of coins (delegated and not) per level:
   // [0] is its own coins, [1] is its children's coins total and so on
   repeated string coins = 5 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.jsontag)    = "coins",
     (gogoproto.moretags)   = "yaml:\"coins,flow\""
   ];
@@ -64,7 +64,7 @@ message Info {
   // Delegated - total amount of delegated coins per level:
   // [0] - delegated by itself, [1] - delegated by children and so on
   repeated string delegated = 6 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.jsontag)    = "delegated",
     (gogoproto.moretags)   = "yaml:\"delegated,flow\""
   ];

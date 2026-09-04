@@ -6,8 +6,8 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 var (
@@ -122,7 +122,7 @@ func (msg MsgUpdateProfile) Type() string { return UpdateProfileConst }
 // ValidateBasic runs stateless checks on the message
 func (msg MsgUpdateProfile) ValidateBasic() error {
 	if _, err := sdk.AccAddressFromBech32(msg.Address); err != nil {
-		return sdkerrors.Wrap(err, "invalid address")
+		return errorsmod.Wrap(err, "invalid address")
 	}
 
 	if len(msg.Updates) == 0 {
@@ -138,13 +138,13 @@ func (msg MsgUpdateProfile) ValidateBasic() error {
 			s := val.String_
 			if len(s) != 0 {
 				if strings.ContainsAny(s, ForbiddenNicknameCharacters) {
-					return sdkerrors.Wrapf(ErrNicknameInvalidChars, "wrong update #%d value", i)
+					return errorsmod.Wrapf(ErrNicknameInvalidChars, "wrong update #%d value", i)
 				}
 				if len(s) < 3 {
-					return sdkerrors.Wrapf(ErrNicknameTooShort, "wrong update #%d value", i)
+					return errorsmod.Wrapf(ErrNicknameTooShort, "wrong update #%d value", i)
 				}
 				if strings.HasPrefix(s, "ARTR-") {
-					return sdkerrors.Wrapf(ErrNicknamePrefix, "wrong update #%d value", i)
+					return errorsmod.Wrapf(ErrNicknamePrefix, "wrong update #%d value", i)
 				}
 			}
 		case

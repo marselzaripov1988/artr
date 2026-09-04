@@ -4,6 +4,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
 
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
@@ -57,7 +58,7 @@ func (msg MsgRequestTransition) ValidateBasic() error {
 		return errors.Wrap(err, "invalid subject address")
 	}
 	if _, err := sdk.AccAddressFromBech32(msg.Destination); err != nil {
-		return sdkerrors.Wrap(sdkerrors.ErrInvalidAddress, "invalid destination address")
+		return errorsmod.Wrap(sdkerrors.ErrInvalidAddress, "invalid destination address")
 	}
 	return nil
 }

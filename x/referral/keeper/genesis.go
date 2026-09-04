@@ -3,6 +3,7 @@ package keeper
 import (
 	"github.com/pkg/errors"
 
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/arterynetwork/artr/x/referral/types"
@@ -135,8 +136,8 @@ func (k Keeper) ImportFromGenesis(
 				[]byte(ba.Account),
 				k.cdc.MustMarshal(&types.Info{
 					Referrer:  ba.FormerReferrer,
-					Coins:     []sdk.Int{k.getBalance(ctx, ba.Account)},
-					Delegated: []sdk.Int{k.getDelegated(ctx, ba.Account)},
+					Coins:     []math.Int{k.getBalance(ctx, ba.Account)},
+					Delegated: []math.Int{k.getDelegated(ctx, ba.Account)},
 					Banished:  true,
 				}),
 			)

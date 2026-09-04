@@ -14,6 +14,7 @@ import (
 	tmcrypto "github.com/cometbft/cometbft/proto/tendermint/crypto"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 
+	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/codec"
 	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
 	crypto "github.com/cosmos/cosmos-sdk/crypto/types"
@@ -74,7 +75,8 @@ func (s *Suite) TestSwitchOn() {
 	s.NoError(s.k.SwitchOn(s.ctx, s.user(2), pubKeys[1]))
 	s.NoError(s.k.SwitchOn(s.ctx, s.user(3), pubKeys[2]))
 
-	resp := s.app.EndBlocker(s.ctx, abci.RequestEndBlock{Height: s.ctx.BlockHeight()})
+	resp, err := s.app.EndBlocker(s.ctx)
+	s.Require().NoError(err)
 	s.Equal(
 		[]abci.ValidatorUpdate{
 			{PubKey: tmPubKeys[1], Power: 15},
@@ -94,7 +96,8 @@ func (s *Suite) TestAddToStaff() {
 	_, pubkey, _ := app.NewTestConsPubAddress()
 	tmPubKey, _ := cryptocodec.ToTmProtoPublicKey(pubkey)
 	s.NoError(s.k.SwitchOn(s.ctx, s.user(15), pubkey))
-	resp := s.app.EndBlocker(s.ctx, abci.RequestEndBlock{Height: s.ctx.BlockHeight()})
+	resp, err := s.app.EndBlocker(s.ctx)
+	s.Require().NoError(err)
 	s.Equal(
 		[]abci.ValidatorUpdate{
 			{PubKey: tmPubKey, Power: 15},
@@ -121,20 +124,21 @@ func (s *Suite) TestRemoveFromStaff() {
 				Address: pubkeys[0].Address().Bytes(),
 				Power:   10,
 			},
-			SignedLastBlock: true,
+			BlockIdFlag: tmproto.BlockIDFlagCommit,
 		},
 		{
 			Validator: abci.Validator{
 				Address: pubkeys[1].Address().Bytes(),
 				Power:   10,
 			},
-			SignedLastBlock: true,
+			BlockIdFlag: tmproto.BlockIDFlagCommit,
 		},
 	}, nil)
 
 	s.NoError(s.k.RemoveFromStaff(s.ctx, s.user(2)))
 	s.NoError(s.k.RemoveFromStaff(s.ctx, s.user(15)))
-	resp := s.app.EndBlocker(s.ctx, abci.RequestEndBlock{Height: s.ctx.BlockHeight()})
+	resp, err := s.app.EndBlocker(s.ctx)
+	s.Require().NoError(err)
 	s.Equal(
 		[]abci.ValidatorUpdate{
 			// user2 is qualified, so it remains
@@ -153,7 +157,7 @@ func (s *Suite) TestProposerAward() {
 	}
 	if err := s.bk.SendCoinsFromAccountToModule(
 		s.ctx, s.user(1), auth.FeeCollectorName,
-		sdk.NewCoins(sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(10_000000))),
+		sdk.NewCoins(sdk.NewCoin(util.ConfigMainDenom, math.NewInt(10_000000))),
 	); err != nil {
 		panic(err)
 	}
@@ -180,7 +184,7 @@ func (s *Suite) TestByzantine() {
 		Address: pubkey.Address().Bytes(),
 		Power:   10,
 	}
-	votes := []abci.VoteInfo{{Validator: validator, SignedLastBlock: true}}
+	votes := []abci.VoteInfo{{Validator: validator, BlockIdFlag: tmproto.BlockIDFlagCommit}}
 
 	// First infraction
 	s.nextBlock(pubkey, votes, []abci.Misbehavior{{
@@ -216,7 +220,8 @@ func (s *Suite) TestByzantine() {
 	} else {
 		s.True(isBanned)
 	}
-	resp := s.app.EndBlocker(s.ctx, abci.RequestEndBlock{Height: s.ctx.BlockHeight()})
+	resp, err := s.app.EndBlocker(s.ctx)
+	s.Require().NoError(err)
 	s.Equal([]abci.ValidatorUpdate{{PubKey: tmPubKey, Power: 0}}, resp.ValidatorUpdates)
 
 	// Banned node cannot be switched on by any means
@@ -244,7 +249,7 @@ func (s *Suite) TestJailing() {
 		Address: pubkey.Address().Bytes(),
 		Power:   10,
 	}
-	votes := []abci.VoteInfo{{Validator: validator, SignedLastBlock: false}}
+	votes := []abci.VoteInfo{{Validator: validator, BlockIdFlag: tmproto.BlockIDFlagAbsent}}
 
 	// First missed block
 	s.nextBlock(proposerKey, votes, nil)
@@ -309,7 +314,7 @@ func (s *Suite) TestSwitchOnAfterSwitchOffWhileJailed() {
 		Address: pubkey.Address().Bytes(),
 		Power:   10,
 	}
-	votes := []abci.VoteInfo{{Validator: validator, SignedLastBlock: false}}
+	votes := []abci.VoteInfo{{Validator: validator, BlockIdFlag: tmproto.BlockIDFlagAbsent}}
 
 	s.nextBlock(proposerKey, votes, nil)
 	s.nextBlock(proposerKey, votes, nil)
@@ -353,7 +358,7 @@ func (s Suite) TestDoubleSwitchOnWithJail() {
 	_, pubkey2, _ := app.NewTestConsPubAddress()
 	s.NoError(s.k.SwitchOn(s.ctx, user, pubkey1))
 
-	votes := []abci.VoteInfo{{Validator: abci.Validator{Address: consAddr}, SignedLastBlock: false}}
+	votes := []abci.VoteInfo{{Validator: abci.Validator{Address: consAddr}, BlockIdFlag: tmproto.BlockIDFlagAbsent}}
 	s.nextBlock(proposerKey, votes, nil)
 	s.nextBlock(proposerKey, votes, nil)
 	data, err := s.k.Get(s.ctx, s.user(2))
@@ -379,7 +384,7 @@ func (s Suite) TestNodeNodeLeap() {
 		Address: pubkey.Address().Bytes(),
 		Power:   10,
 	}
-	votes := []abci.VoteInfo{{Validator: validator, SignedLastBlock: true}}
+	votes := []abci.VoteInfo{{Validator: validator, BlockIdFlag: tmproto.BlockIDFlagCommit}}
 
 	s.nextBlock(proposerKey, votes, nil)
 	s.nextBlock(proposerKey, votes, nil)
@@ -413,7 +418,7 @@ func (s Suite) TestNodeNodeLeap() {
 	s.Equal(int64(3), data.OkBlocksInRow)
 
 	validator.Address = newPubkey.Address().Bytes()
-	votes = []abci.VoteInfo{{Validator: validator, SignedLastBlock: true}}
+	votes = []abci.VoteInfo{{Validator: validator, BlockIdFlag: tmproto.BlockIDFlagCommit}}
 	s.nextBlock(proposerKey, votes, nil)
 
 	data, err = s.k.Get(s.ctx, user)
@@ -432,7 +437,7 @@ func (s *Suite) TestDoubleJail() {
 		Address: pubkey.Address().Bytes(),
 		Power:   10,
 	}
-	votes := []abci.VoteInfo{{Validator: validator, SignedLastBlock: false}}
+	votes := []abci.VoteInfo{{Validator: validator, BlockIdFlag: tmproto.BlockIDFlagAbsent}}
 
 	// 4 missed blocks in row (suppose Tendermint lagged and didn't exclude the validator in time)
 	for i := 0; i < 4; i++ {
@@ -454,7 +459,7 @@ func (s *Suite) TestStatusDowngrade() {
 	proposerKey := util.MustParseConsPubKey(app.DefaultUser1ConsPubKey)
 	tmPubKey, _ := cryptocodec.ToTmProtoPublicKey(proposerKey)
 	validator := abci.Validator{Address: proposerKey.Address().Bytes(), Power: 15}
-	votes := []abci.VoteInfo{{Validator: validator, SignedLastBlock: true}}
+	votes := []abci.VoteInfo{{Validator: validator, BlockIdFlag: tmproto.BlockIDFlagCommit}}
 
 	rk := s.app.GetReferralKeeper()
 	user1 := app.DefaultGenesisUsers["user1"].String()
@@ -482,22 +487,28 @@ func (s *BaseSuite) TearDownTest() {
 	}
 }
 
-func (s *BaseSuite) nextBlock(proposer crypto.PubKey, votes []abci.VoteInfo, byzantine []abci.Misbehavior) (abci.ResponseEndBlock, abci.ResponseBeginBlock) {
-	ebr := s.app.EndBlocker(s.ctx, abci.RequestEndBlock{Height: s.ctx.BlockHeight()})
-
+func (s *BaseSuite) nextBlock(proposer crypto.PubKey, votes []abci.VoteInfo, byzantine []abci.Misbehavior) (sdk.EndBlock, sdk.BeginBlock) {
+	ebr, err := s.app.EndBlocker(s.ctx)
+	s.Require().NoError(err)
+	// В ABCI 2.0 обработчик не получает запроса: предложивший блок, голоса
+	// предыдущего блока и свидетельства о нарушениях кладутся в контекст.
+	//
+	// Заголовок правим по месту, а не собираем заново: WithBlockHeader
+	// заменяет его целиком, а в нём же лежат время и высота блока.
+	header := s.ctx.BlockHeader()
+	header.ProposerAddress = proposer.Address().Bytes()
 	s.ctx = s.ctx.
+		WithBlockHeader(header).
 		WithBlockHeight(s.ctx.BlockHeight() + 1).
-		WithBlockTime(s.ctx.BlockTime().Add(30 * time.Second))
+		WithBlockTime(s.ctx.BlockTime().Add(30 * time.Second)).
+		WithVoteInfos(votes).
+		WithCometInfo(app.TestCometInfo{
+			Proposer:    proposer.Address().Bytes(),
+			Misbehavior: byzantine,
+		})
 
-	bbr := s.app.BeginBlocker(s.ctx, abci.RequestBeginBlock{
-		Header: tmproto.Header{
-			ProposerAddress: proposer.Address().Bytes(),
-		},
-		LastCommitInfo: abci.CommitInfo{
-			Votes: votes,
-		},
-		ByzantineValidators: byzantine,
-	})
+	bbr, err := s.app.BeginBlocker(s.ctx)
+	s.Require().NoError(err)
 	return ebr, bbr
 }
 

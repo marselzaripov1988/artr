@@ -10,11 +10,11 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	abci "github.com/cometbft/cometbft/abci/types"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 
+	"cosmossdk.io/math"
+	"cosmossdk.io/store/prefix"
 	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authK "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 
@@ -44,7 +44,7 @@ type Suite struct {
 	bk        bank.Keeper
 	accKeeper authK.AccountKeeper
 
-	bbHeader abci.RequestBeginBlock
+	bbHeader tmproto.Header
 }
 
 func (s *Suite) SetupTest() {
@@ -65,10 +65,8 @@ func (s *Suite) SetupTest() {
 	s.bk = s.app.GetBankKeeper()
 	s.accKeeper = s.app.GetAccountKeeper()
 
-	s.bbHeader = abci.RequestBeginBlock{
-		Header: tmproto.Header{
-			ProposerAddress: util.MustParseConsPubKey(keeper.DefaultUser1ConsPubKey).Address().Bytes(),
-		},
+	s.bbHeader = tmproto.Header{
+		ProposerAddress: util.MustParseConsPubKey(keeper.DefaultUser1ConsPubKey).Address().Bytes(),
 	}
 }
 
@@ -85,16 +83,16 @@ func (s *Suite) TestDelegatingAndRevoking() {
 	user := keeper.DefaultGenesisUsers["user4"]
 	validator := keeper.DefaultGenesisUsers["user3"]
 	s.Equal(
-		sdk.NewCoins(sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(1_000_000000))),
+		sdk.NewCoins(sdk.NewCoin(util.ConfigMainDenom, math.NewInt(1_000_000000))),
 		s.bk.GetBalance(s.ctx, user),
 	)
 	s.Empty(
 		s.bk.GetBalance(s.ctx, validator).Add(s.bk.GetBalance(s.ctx, s.accKeeper.GetModuleAddress(util.SplittableFeeCollectorName))...),
 	)
 
-	s.NoError(s.k.Delegate(s.ctx, user, sdk.NewInt(1_000_000000)))
+	s.NoError(s.k.Delegate(s.ctx, user, math.NewInt(1_000_000000)))
 	s.Equal(
-		sdk.NewCoins(sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(997_000000))),
+		sdk.NewCoins(sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(997_000000))),
 		s.bk.GetBalance(s.ctx, user),
 	)
 	s.Equal(
@@ -102,9 +100,9 @@ func (s *Suite) TestDelegatingAndRevoking() {
 		s.bk.GetBalance(s.ctx, validator).Add(s.bk.GetBalance(s.ctx, s.accKeeper.GetModuleAddress(util.SplittableFeeCollectorName))...),
 	)
 
-	s.NoError(s.k.Revoke(s.ctx, user, sdk.NewInt(997_000000), false))
+	s.NoError(s.k.Revoke(s.ctx, user, math.NewInt(997_000000), false))
 	s.Equal(
-		sdk.NewCoins(sdk.NewCoin(util.ConfigRevokingDenom, sdk.NewInt(947_150000))),
+		sdk.NewCoins(sdk.NewCoin(util.ConfigRevokingDenom, math.NewInt(947_150000))),
 		s.bk.GetBalance(s.ctx, user),
 	)
 	s.Equal(
@@ -114,7 +112,7 @@ func (s *Suite) TestDelegatingAndRevoking() {
 	s.Equal(
 		[]types.RevokeRequest{{
 			Time:   genesis_time.Add(14 * 24 * time.Hour),
-			Amount: sdk.NewInt(947_150000),
+			Amount: math.NewInt(947_150000),
 		}},
 		s.k.GetRevoking(s.ctx, user),
 	)
@@ -122,7 +120,7 @@ func (s *Suite) TestDelegatingAndRevoking() {
 	s.ctx = s.ctx.WithBlockHeight(14*2880 - 1).WithBlockTime(genesis_time.Add((14*2880 - 1) * 30 * time.Second))
 	s.nextBlock()
 	s.Equal(
-		sdk.NewCoins(sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(947_150000))),
+		sdk.NewCoins(sdk.NewCoin(util.ConfigMainDenom, math.NewInt(947_150000))),
 		s.bk.GetBalance(s.ctx, user),
 	)
 	s.Equal(
@@ -136,16 +134,16 @@ func (s *Suite) TestAccrueAfterRevoke() {
 	user := keeper.DefaultGenesisUsers["user4"]
 	validator := keeper.DefaultGenesisUsers["user3"]
 	s.Equal(
-		sdk.NewCoins(sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(1_000_000000))),
+		sdk.NewCoins(sdk.NewCoin(util.ConfigMainDenom, math.NewInt(1_000_000000))),
 		s.bk.GetBalance(s.ctx, user),
 	)
 	s.Empty(
 		s.bk.GetBalance(s.ctx, validator).Add(s.bk.GetBalance(s.ctx, s.accKeeper.GetModuleAddress(util.SplittableFeeCollectorName))...),
 	)
 
-	s.NoError(s.k.Delegate(s.ctx, user, sdk.NewInt(1_000_000000)))
+	s.NoError(s.k.Delegate(s.ctx, user, math.NewInt(1_000_000000)))
 	s.Equal(
-		sdk.NewCoins(sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(997_000000))),
+		sdk.NewCoins(sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(997_000000))),
 		s.bk.GetBalance(s.ctx, user),
 	)
 	s.Equal(
@@ -153,11 +151,11 @@ func (s *Suite) TestAccrueAfterRevoke() {
 		s.bk.GetBalance(s.ctx, validator).Add(s.bk.GetBalance(s.ctx, s.accKeeper.GetModuleAddress(util.SplittableFeeCollectorName))...),
 	)
 
-	s.NoError(s.k.Revoke(s.ctx, user, sdk.NewInt(350_000000), false))
+	s.NoError(s.k.Revoke(s.ctx, user, math.NewInt(350_000000), false))
 	s.Equal(
 		sdk.NewCoins(
-			sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(647_000000)),
-			sdk.NewCoin(util.ConfigRevokingDenom, sdk.NewInt(332_500000)),
+			sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(647_000000)),
+			sdk.NewCoin(util.ConfigRevokingDenom, math.NewInt(332_500000)),
 		),
 		s.bk.GetBalance(s.ctx, user),
 	)
@@ -173,9 +171,9 @@ func (s *Suite) TestAccrueAfterRevoke() {
 
 	s.Equal(
 		sdk.NewCoins(
-			sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(4_730433)),
-			sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(647_000000)),
-			sdk.NewCoin(util.ConfigRevokingDenom, sdk.NewInt(332_500000)),
+			sdk.NewCoin(util.ConfigMainDenom, math.NewInt(4_730433)),
+			sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(647_000000)),
+			sdk.NewCoin(util.ConfigRevokingDenom, math.NewInt(332_500000)),
 		),
 		s.bk.GetBalance(s.ctx, user),
 	)
@@ -190,8 +188,8 @@ func (s *Suite) TestAccrueAfterRevoke() {
 
 	s.Equal(
 		sdk.NewCoins(
-			sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(396_360842)),
-			sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(647_000000)),
+			sdk.NewCoin(util.ConfigMainDenom, math.NewInt(396_360842)),
+			sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(647_000000)),
 		),
 		s.bk.GetBalance(s.ctx, user),
 	)
@@ -206,8 +204,8 @@ func (s *Suite) TestAccrueAfterRevoke() {
 
 	s.Equal(
 		sdk.NewCoins(
-			sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(400_876255)),
-			sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(647_000000)),
+			sdk.NewCoin(util.ConfigMainDenom, math.NewInt(400_876255)),
+			sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(647_000000)),
 		),
 		s.bk.GetBalance(s.ctx, user),
 	)
@@ -229,9 +227,9 @@ func (s *Suite) TestAccrueOnRevoke() {
 		s.bk.GetBalance(s.ctx, validator).Add(s.bk.GetBalance(s.ctx, s.accKeeper.GetModuleAddress(util.SplittableFeeCollectorName))...),
 	)
 
-	s.NoError(s.k.Delegate(s.ctx, user, sdk.NewInt(1_000_000000)))
+	s.NoError(s.k.Delegate(s.ctx, user, math.NewInt(1_000_000000)))
 	s.Equal(
-		sdk.NewCoins(sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(997_000000))),
+		sdk.NewCoins(sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(997_000000))),
 		s.bk.GetBalance(s.ctx, user),
 	)
 	s.Equal(
@@ -245,7 +243,7 @@ func (s *Suite) TestAccrueOnRevoke() {
 		s.nextBlock()
 	}
 	s.Equal(
-		sdk.NewCoins(sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(997_000000))),
+		sdk.NewCoins(sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(997_000000))),
 		s.bk.GetBalance(s.ctx, user),
 	)
 	acc, err := s.k.GetAccumulation(s.ctx, user)
@@ -254,12 +252,12 @@ func (s *Suite) TestAccrueOnRevoke() {
 	s.Equal(genesisTime.Add(24*time.Hour), acc.End)
 	s.Equal(int64(3_655666), acc.CurrentUartrs)
 
-	s.NoError(s.k.Revoke(s.ctx, user, sdk.NewInt(350_000000), false))
+	s.NoError(s.k.Revoke(s.ctx, user, math.NewInt(350_000000), false))
 	s.Equal(
 		sdk.NewCoins(
-			sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(3_644700)),
-			sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(647_000000)),
-			sdk.NewCoin(util.ConfigRevokingDenom, sdk.NewInt(332_500000)),
+			sdk.NewCoin(util.ConfigMainDenom, math.NewInt(3_644700)),
+			sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(647_000000)),
+			sdk.NewCoin(util.ConfigRevokingDenom, math.NewInt(332_500000)),
 		),
 		s.bk.GetBalance(s.ctx, user),
 	)
@@ -274,8 +272,8 @@ func (s *Suite) TestAccrueOnRevoke() {
 	}
 	s.Equal(
 		sdk.NewCoins(
-			sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(399_790522)),
-			sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(647_000000)),
+			sdk.NewCoin(util.ConfigMainDenom, math.NewInt(399_790522)),
+			sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(647_000000)),
 		),
 		s.bk.GetBalance(s.ctx, user),
 	)
@@ -295,8 +293,8 @@ func (s *Suite) TestAccrueOnRevoke() {
 	}
 	s.Equal(
 		sdk.NewCoins(
-			sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(399_790522)),
-			sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(647_000000)),
+			sdk.NewCoin(util.ConfigMainDenom, math.NewInt(399_790522)),
+			sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(647_000000)),
 		),
 		s.bk.GetBalance(s.ctx, user),
 	)
@@ -310,16 +308,16 @@ func (s *Suite) TestAccrue_MissedPart() {
 	user := keeper.DefaultGenesisUsers["user4"]
 	validator := keeper.DefaultGenesisUsers["user3"]
 	s.Equal(
-		sdk.NewCoins(sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(1_000_000000))),
+		sdk.NewCoins(sdk.NewCoin(util.ConfigMainDenom, math.NewInt(1_000_000000))),
 		s.bk.GetBalance(s.ctx, user),
 	)
 	s.Empty(
 		s.bk.GetBalance(s.ctx, validator).Add(s.bk.GetBalance(s.ctx, s.accKeeper.GetModuleAddress(util.SplittableFeeCollectorName))...),
 	)
 
-	s.NoError(s.k.Delegate(s.ctx, user, sdk.NewInt(1_000_000000)))
+	s.NoError(s.k.Delegate(s.ctx, user, math.NewInt(1_000_000000)))
 	s.Equal(
-		sdk.NewCoins(sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(997_000000))),
+		sdk.NewCoins(sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(997_000000))),
 		s.bk.GetBalance(s.ctx, user),
 	)
 	s.Equal(
@@ -335,8 +333,8 @@ func (s *Suite) TestAccrue_MissedPart() {
 
 	s.Equal(
 		sdk.NewCoins(
-			sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(6_560460)),
-			sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(997_000000)),
+			sdk.NewCoin(util.ConfigMainDenom, math.NewInt(6_560460)),
+			sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(997_000000)),
 		),
 		s.bk.GetBalance(s.ctx, user),
 	)
@@ -352,8 +350,8 @@ func (s *Suite) TestAccrue_MissedPart() {
 
 	s.Equal(
 		sdk.NewCoins(
-			sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(13_849860)),
-			sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(997_000000)),
+			sdk.NewCoin(util.ConfigMainDenom, math.NewInt(13_849860)),
+			sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(997_000000)),
 		),
 		s.bk.GetBalance(s.ctx, user),
 	)
@@ -367,16 +365,16 @@ func (s *Suite) TestAccrueOnRevoke_MissedPart() {
 	user := keeper.DefaultGenesisUsers["user4"]
 	validator := keeper.DefaultGenesisUsers["user3"]
 	s.Equal(
-		sdk.NewCoins(sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(1_000_000000))),
+		sdk.NewCoins(sdk.NewCoin(util.ConfigMainDenom, math.NewInt(1_000_000000))),
 		s.bk.GetBalance(s.ctx, user),
 	)
 	s.Empty(
 		s.bk.GetBalance(s.ctx, validator).Add(s.bk.GetBalance(s.ctx, s.accKeeper.GetModuleAddress(util.SplittableFeeCollectorName))...),
 	)
 
-	s.NoError(s.k.Delegate(s.ctx, user, sdk.NewInt(1_000_000000)))
+	s.NoError(s.k.Delegate(s.ctx, user, math.NewInt(1_000_000000)))
 	s.Equal(
-		sdk.NewCoins(sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(997_000000))),
+		sdk.NewCoins(sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(997_000000))),
 		s.bk.GetBalance(s.ctx, user),
 	)
 	s.Equal(
@@ -389,13 +387,13 @@ func (s *Suite) TestAccrueOnRevoke_MissedPart() {
 	for t := 0; t < util.BlocksOneDay/4; t++ {
 		s.nextBlock()
 	}
-	s.NoError(s.k.Revoke(s.ctx, user, sdk.NewInt(100_000000), false))
+	s.NoError(s.k.Revoke(s.ctx, user, math.NewInt(100_000000), false))
 
 	s.Equal(
 		sdk.NewCoins(
-			sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(1_093410)),
-			sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(897_000000)),
-			sdk.NewCoin(util.ConfigRevokingDenom, sdk.NewInt(95_000000)),
+			sdk.NewCoin(util.ConfigMainDenom, math.NewInt(1_093410)),
+			sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(897_000000)),
+			sdk.NewCoin(util.ConfigRevokingDenom, math.NewInt(95_000000)),
 		),
 		s.bk.GetBalance(s.ctx, user),
 	)
@@ -411,9 +409,9 @@ func (s *Suite) TestAccrueOnRevoke_MissedPart() {
 
 	s.Equal(
 		sdk.NewCoins(
-			sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(7_651676)),
-			sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(897_000000)),
-			sdk.NewCoin(util.ConfigRevokingDenom, sdk.NewInt(95_000000)),
+			sdk.NewCoin(util.ConfigMainDenom, math.NewInt(7_651676)),
+			sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(897_000000)),
+			sdk.NewCoin(util.ConfigRevokingDenom, math.NewInt(95_000000)),
 		),
 		s.bk.GetBalance(s.ctx, user),
 	)
@@ -438,13 +436,13 @@ func (s *Suite) TestAccrue_ValidatorBonus() {
 	s.k.SetParams(s.ctx, pz)
 
 	s.Equal(
-		sdk.NewCoins(sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(1_000_000000))),
+		sdk.NewCoins(sdk.NewCoin(util.ConfigMainDenom, math.NewInt(1_000_000000))),
 		s.bk.GetBalance(s.ctx, validator),
 	)
 
-	s.NoError(s.k.Delegate(s.ctx, validator, sdk.NewInt(1_000_000000)))
+	s.NoError(s.k.Delegate(s.ctx, validator, math.NewInt(1_000_000000)))
 	s.Equal(
-		sdk.NewCoins(sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(997_000000))),
+		sdk.NewCoins(sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(997_000000))),
 		s.bk.GetBalance(s.ctx, validator),
 	)
 
@@ -454,8 +452,8 @@ func (s *Suite) TestAccrue_ValidatorBonus() {
 
 	s.Equal(
 		sdk.NewCoins(
-			sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(13_601433)),
-			sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(997_000000)),
+			sdk.NewCoin(util.ConfigMainDenom, math.NewInt(13_601433)),
+			sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(997_000000)),
 		),
 		s.bk.GetBalance(s.ctx, validator),
 	)
@@ -463,14 +461,14 @@ func (s *Suite) TestAccrue_ValidatorBonus() {
 
 func (s *Suite) TestMinDelegation() {
 	user := keeper.DefaultGenesisUsers["user4"]
-	s.ErrorIs(s.k.Delegate(s.ctx, user, sdk.NewInt(999)), types.ErrLessThanMinimum)
-	s.NoError(s.k.Delegate(s.ctx, user, sdk.NewInt(1000)))
+	s.ErrorIs(s.k.Delegate(s.ctx, user, math.NewInt(999)), types.ErrLessThanMinimum)
+	s.NoError(s.k.Delegate(s.ctx, user, math.NewInt(1000)))
 
 	p := s.k.GetParams(s.ctx)
 	p.MinDelegate = 2000
 	s.k.SetParams(s.ctx, p)
-	s.ErrorIs(s.k.Delegate(s.ctx, user, sdk.NewInt(1999)), types.ErrLessThanMinimum)
-	s.NoError(s.k.Delegate(s.ctx, user, sdk.NewInt(2000)))
+	s.ErrorIs(s.k.Delegate(s.ctx, user, math.NewInt(1999)), types.ErrLessThanMinimum)
+	s.NoError(s.k.Delegate(s.ctx, user, math.NewInt(2000)))
 }
 
 func (s *Suite) TestDelegateDustAmount() {
@@ -479,7 +477,7 @@ func (s *Suite) TestDelegateDustAmount() {
 	s.bk.SetParams(s.ctx, p)
 	user := keeper.DefaultGenesisUsers["user4"]
 
-	s.NoError(s.k.Delegate(s.ctx, user, sdk.NewInt(1_000000)))
+	s.NoError(s.k.Delegate(s.ctx, user, math.NewInt(1_000000)))
 	s.Equal(int64(997000), s.bk.GetBalance(s.ctx, user).AmountOf(util.ConfigDelegatedDenom).Int64())
 	resp, err := s.k.GetAccumulation(s.ctx, user)
 	s.Equal(types.ErrNothingDelegated, err)
@@ -492,9 +490,9 @@ func (s *Suite) TestLeaveDust() {
 	s.bk.SetParams(s.ctx, p)
 	user := keeper.DefaultGenesisUsers["user4"]
 
-	s.NoError(s.k.Delegate(s.ctx, user, sdk.NewInt(10_000000)))
+	s.NoError(s.k.Delegate(s.ctx, user, math.NewInt(10_000000)))
 	s.nextBlock()
-	s.NoError(s.k.Revoke(s.ctx, user, sdk.NewInt(9_000000), false))
+	s.NoError(s.k.Revoke(s.ctx, user, math.NewInt(9_000000), false))
 
 	s.Equal(int64(970000), s.bk.GetBalance(s.ctx, user).AmountOf(util.ConfigDelegatedDenom).Int64())
 	resp, err := s.k.GetAccumulation(s.ctx, user)
@@ -506,13 +504,13 @@ func (s *Suite) TestRevokePeriod() {
 	user := keeper.DefaultGenesisUsers["user2"]
 	genesisTime := s.ctx.BlockTime()
 
-	s.NoError(s.k.Delegate(s.ctx, user, sdk.NewInt(100_000000)))
-	s.NoError(s.k.Revoke(s.ctx, user, sdk.NewInt(1_000000), false))
+	s.NoError(s.k.Delegate(s.ctx, user, math.NewInt(100_000000)))
+	s.NoError(s.k.Revoke(s.ctx, user, math.NewInt(1_000000), false))
 
 	s.Equal(
 		[]types.RevokeRequest{
 			{
-				Amount: sdk.NewInt(950000),
+				Amount: math.NewInt(950000),
 				Time:   genesisTime.Add(14 * 24 * time.Hour),
 			},
 		},
@@ -525,15 +523,15 @@ func (s *Suite) TestRevokePeriod() {
 	s.k.SetParams(s.ctx, pz)
 	s.nextBlock()
 
-	s.NoError(s.k.Revoke(s.ctx, user, sdk.NewInt(2_000000), false))
+	s.NoError(s.k.Revoke(s.ctx, user, math.NewInt(2_000000), false))
 
 	s.Equal(
 		[]types.RevokeRequest{
 			{
-				Amount: sdk.NewInt(950000),
+				Amount: math.NewInt(950000),
 				Time:   genesisTime.Add(14 * 24 * time.Hour),
 			}, {
-				Amount: sdk.NewInt(1_900000),
+				Amount: math.NewInt(1_900000),
 				Time:   genesisTime.Add(7*24*time.Hour + time.Minute),
 			},
 		}, s.k.GetRevoking(s.ctx, user),
@@ -547,7 +545,7 @@ func (s *Suite) TestRevokePeriod() {
 	s.Equal(
 		[]types.RevokeRequest{
 			{
-				Amount: sdk.NewInt(950000),
+				Amount: math.NewInt(950000),
 				Time:   genesisTime.Add(14 * 24 * time.Hour),
 			},
 		}, s.k.GetRevoking(s.ctx, user),
@@ -563,13 +561,13 @@ func (s *Suite) TestGetAccumulation() {
 	genesisTime := s.ctx.BlockTime()
 	user := keeper.DefaultGenesisUsers["user4"]
 	s.Equal(
-		sdk.NewCoins(sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(1_000_000000))),
+		sdk.NewCoins(sdk.NewCoin(util.ConfigMainDenom, math.NewInt(1_000_000000))),
 		s.bk.GetBalance(s.ctx, user),
 	)
 
-	s.NoError(s.k.Delegate(s.ctx, user, sdk.NewInt(1_000_000000)))
+	s.NoError(s.k.Delegate(s.ctx, user, math.NewInt(1_000_000000)))
 	s.Equal(
-		sdk.NewCoins(sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(997_000000))),
+		sdk.NewCoins(sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(997_000000))),
 		s.bk.GetBalance(s.ctx, user),
 	)
 
@@ -596,13 +594,13 @@ func (s *Suite) TestGetAccumulation_MissedPart() {
 	genesisTime := s.ctx.BlockTime()
 	user := keeper.DefaultGenesisUsers["user4"]
 	s.Equal(
-		sdk.NewCoins(sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(1_000_000000))),
+		sdk.NewCoins(sdk.NewCoin(util.ConfigMainDenom, math.NewInt(1_000_000000))),
 		s.bk.GetBalance(s.ctx, user),
 	)
 
-	s.NoError(s.k.Delegate(s.ctx, user, sdk.NewInt(1_000_000000)))
+	s.NoError(s.k.Delegate(s.ctx, user, math.NewInt(1_000_000000)))
 	s.Equal(
-		sdk.NewCoins(sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(997_000000))),
+		sdk.NewCoins(sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(997_000000))),
 		s.bk.GetBalance(s.ctx, user),
 	)
 
@@ -643,22 +641,22 @@ func (s *Suite) TestGetAccumulation_ValidatorBonus() {
 	s.k.SetParams(s.ctx, pz)
 
 	s.Equal(
-		sdk.NewCoins(sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(1_000_000000))),
+		sdk.NewCoins(sdk.NewCoin(util.ConfigMainDenom, math.NewInt(1_000_000000))),
 		s.bk.GetBalance(s.ctx, user),
 	)
 	s.Equal(
-		sdk.NewCoins(sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(1_000_000000))),
+		sdk.NewCoins(sdk.NewCoin(util.ConfigMainDenom, math.NewInt(1_000_000000))),
 		s.bk.GetBalance(s.ctx, validator),
 	)
 
-	s.NoError(s.k.Delegate(s.ctx, user, sdk.NewInt(1_000_000000)))
+	s.NoError(s.k.Delegate(s.ctx, user, math.NewInt(1_000_000000)))
 	s.Equal(
-		sdk.NewCoins(sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(997_000000))),
+		sdk.NewCoins(sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(997_000000))),
 		s.bk.GetBalance(s.ctx, user),
 	)
-	s.NoError(s.k.Delegate(s.ctx, validator, sdk.NewInt(1_000_000000)))
+	s.NoError(s.k.Delegate(s.ctx, validator, math.NewInt(1_000_000000)))
 	s.Equal(
-		sdk.NewCoins(sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(997_000000))),
+		sdk.NewCoins(sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(997_000000))),
 		s.bk.GetBalance(s.ctx, validator),
 	)
 
@@ -719,7 +717,7 @@ func (s *Suite) TestDelegateAfterBanishment() {
 	s.NoError(err)
 	s.True(r.Banished)
 
-	s.NoError(s.k.Delegate(s.ctx, user, sdk.NewInt(10_000000)))
+	s.NoError(s.k.Delegate(s.ctx, user, math.NewInt(10_000000)))
 	r, err = rk.Get(s.ctx, user.String())
 	s.NoError(err)
 	s.False(r.Banished)
@@ -733,7 +731,7 @@ func (s *Suite) TestValidatorBonus() {
 	s.NoError(s.bk.SendCoins(s.ctx, keeper.DefaultGenesisUsers["user4"], user, util.Uartrs(1_000_000000)))
 	s.nextBlock()
 	s.Equal(
-		sdk.NewCoins(sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(1_000_000000))),
+		sdk.NewCoins(sdk.NewCoin(util.ConfigMainDenom, math.NewInt(1_000_000000))),
 		s.bk.GetBalance(s.ctx, user),
 	)
 
@@ -743,12 +741,12 @@ func (s *Suite) TestValidatorBonus() {
 	}
 	s.k.SetParams(s.ctx, pz)
 
-	s.NoError(s.k.Delegate(s.ctx, user, sdk.NewInt(1_000_000000)))
+	s.NoError(s.k.Delegate(s.ctx, user, math.NewInt(1_000_000000)))
 	s.nextBlock()
 	s.Equal(
 		sdk.NewCoins(
-			sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(3_000000)),
-			sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(997_000000)),
+			sdk.NewCoin(util.ConfigMainDenom, math.NewInt(3_000000)),
+			sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(997_000000)),
 		),
 		s.bk.GetBalance(s.ctx, user),
 	)
@@ -757,17 +755,25 @@ func (s *Suite) TestValidatorBonus() {
 	s.nextBlock()
 	s.Equal(
 		sdk.NewCoins(
-			sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(13_302333)), // 3 + 997 * ((21% + 9% + 1%) / 30)
-			sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(997_000000)),
+			sdk.NewCoin(util.ConfigMainDenom, math.NewInt(13_302333)), // 3 + 997 * ((21% + 9% + 1%) / 30)
+			sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(997_000000)),
 		),
 		s.bk.GetBalance(s.ctx, user).Add(s.bk.GetBalance(s.ctx, s.accKeeper.GetModuleAddress(util.SplittableFeeCollectorName))...),
 	)
 }
 
-func (s *Suite) nextBlock() (abci.ResponseEndBlock, abci.ResponseBeginBlock) {
-	ebr := s.app.EndBlocker(s.ctx, abci.RequestEndBlock{})
-	s.ctx = s.ctx.WithBlockHeight(s.ctx.BlockHeight() + 1).WithBlockTime(s.ctx.BlockTime().Add(30 * time.Second))
-	bbr := s.app.BeginBlocker(s.ctx, s.bbHeader)
+func (s *Suite) nextBlock() (sdk.EndBlock, sdk.BeginBlock) {
+	ebr, err := s.app.EndBlocker(s.ctx)
+	s.Require().NoError(err)
+	// Предложивший блок теперь берётся из контекста, а не из запроса.
+	// Заголовок ставится первым: WithBlockHeader заменяет его целиком, а
+	// время и высота блока хранятся именно в нём.
+	s.ctx = s.ctx.
+		WithBlockHeader(s.bbHeader).
+		WithBlockHeight(s.ctx.BlockHeight() + 1).
+		WithBlockTime(s.ctx.BlockTime().Add(30 * time.Second))
+	bbr, err := s.app.BeginBlocker(s.ctx)
+	s.Require().NoError(err)
 	return ebr, bbr
 }
 

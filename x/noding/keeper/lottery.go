@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	storeTypes "cosmossdk.io/store/types"
 	"encoding/binary"
 
 	"github.com/pkg/errors"
@@ -18,7 +19,7 @@ func (k Keeper) lotteryAddNew(ctx sdk.Context, acc sdk.AccAddress, data *types.I
 	store := ctx.KVStore(k.indexStoreKey)
 	var n uint64
 
-	it := sdk.KVStoreReversePrefixIterator(store, IdxPrefixLotteryQueue)
+	it := storeTypes.KVStoreReversePrefixIterator(store, IdxPrefixLotteryQueue)
 	if it.Valid() {
 		n = binary.BigEndian.Uint64(it.Key()[len(IdxPrefixLotteryQueue):]) + 1
 	} else {
@@ -47,7 +48,7 @@ func (k Keeper) lotteryExclude(ctx sdk.Context, data *types.Info) error {
 func (k Keeper) lotteryLastNo(ctx sdk.Context, count int) uint64 {
 	store := ctx.KVStore(k.indexStoreKey)
 	key := make([]byte, len(IdxPrefixLotteryQueue)+8)
-	it := sdk.KVStorePrefixIterator(store, IdxPrefixLotteryQueue)
+	it := storeTypes.KVStorePrefixIterator(store, IdxPrefixLotteryQueue)
 	for i := 0; i < count; i++ {
 		if !it.Valid() {
 			break

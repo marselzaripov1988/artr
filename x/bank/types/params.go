@@ -5,6 +5,7 @@ import (
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
 
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	paramTypes "github.com/cosmos/cosmos-sdk/x/params/types"
 
@@ -198,7 +199,7 @@ func validateTransactionFeeSplitRatios(i interface{}) error {
 	if dt.ForProposer.Add(dt.ForCompany).GT(util.FractionInt(1)) {
 		return errors.New("TransactionFeeSplitRatios sums must be less than or equal 1")
 	}
-	if util.CalculateTransactionFeeSplitRatiosLCM(dt.ForProposer, dt.ForCompany).GT(sdk.NewInt(util.TransactionFeeSplitRatiosMaxLcm)) {
+	if util.CalculateTransactionFeeSplitRatiosLCM(dt.ForProposer, dt.ForCompany).GT(math.NewInt(util.TransactionFeeSplitRatiosMaxLcm)) {
 		return errors.Errorf("TransactionFeeSplitRatios LCM must be less than or equal %d", util.TransactionFeeSplitRatiosMaxLcm)
 	}
 	return nil

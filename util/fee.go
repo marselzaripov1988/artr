@@ -1,13 +1,13 @@
 package util
 
 import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	"cosmossdk.io/math"
 )
 
-func CalculateFee(amount sdk.Int, txFeeFraction Fraction, txFeeMaxAmount int64, forProposerFeeFraction, forCompanyFeeFraction Fraction) sdk.Int {
-	fee := sdk.NewInt(txFeeFraction.MulInt64(amount.Int64()).Int64())
+func CalculateFee(amount math.Int, txFeeFraction Fraction, txFeeMaxAmount int64, forProposerFeeFraction, forCompanyFeeFraction Fraction) math.Int {
+	fee := math.NewInt(txFeeFraction.MulInt64(amount.Int64()).Int64())
 
-	maxFee := sdk.NewInt(txFeeMaxAmount)
+	maxFee := math.NewInt(txFeeMaxAmount)
 	if !maxFee.IsZero() && fee.GT(maxFee) {
 		fee = maxFee
 	}
@@ -19,18 +19,18 @@ func calculateForBurningFeeFraction(forProposerFeeFraction, forCompanyFeeFractio
 	return FractionInt(1).Sub(forProposerFeeFraction).Sub(forCompanyFeeFraction)
 }
 
-func CalculateTransactionFeeSplitRatiosLCM(forProposerFeeFraction, forCompanyFeeFraction Fraction) sdk.Int {
-	return sdk.NewIntFromBigInt(lcm(lcm(forProposerFeeFraction.denom, forCompanyFeeFraction.denom), calculateForBurningFeeFraction(forProposerFeeFraction, forCompanyFeeFraction).denom))
+func CalculateTransactionFeeSplitRatiosLCM(forProposerFeeFraction, forCompanyFeeFraction Fraction) math.Int {
+	return math.NewIntFromBigInt(lcm(lcm(forProposerFeeFraction.denom, forCompanyFeeFraction.denom), calculateForBurningFeeFraction(forProposerFeeFraction, forCompanyFeeFraction).denom))
 }
 
-func calculateSplittableFee(feeLimit sdk.Int, forProposerFeeFraction, forCompanyFeeFraction Fraction) sdk.Int {
+func calculateSplittableFee(feeLimit math.Int, forProposerFeeFraction, forCompanyFeeFraction Fraction) math.Int {
 	return feeLimit.Sub(feeLimit.Mod(CalculateTransactionFeeSplitRatiosLCM(forProposerFeeFraction, forCompanyFeeFraction)))
 }
 
-func SplitFee(splittableFee sdk.Int, forProposerFeeFraction, forCompanyFeeFraction Fraction) (forProposer, forCompany, forBurning sdk.Int) {
-	return sdk.NewInt(forProposerFeeFraction.MulInt64(splittableFee.Int64()).Int64()),
-		sdk.NewInt(forCompanyFeeFraction.MulInt64(splittableFee.Int64()).Int64()),
-		sdk.NewInt(calculateForBurningFeeFraction(forProposerFeeFraction, forCompanyFeeFraction).MulInt64(splittableFee.Int64()).Int64())
+func SplitFee(splittableFee math.Int, forProposerFeeFraction, forCompanyFeeFraction Fraction) (forProposer, forCompany, forBurning math.Int) {
+	return math.NewInt(forProposerFeeFraction.MulInt64(splittableFee.Int64()).Int64()),
+		math.NewInt(forCompanyFeeFraction.MulInt64(splittableFee.Int64()).Int64()),
+		math.NewInt(calculateForBurningFeeFraction(forProposerFeeFraction, forCompanyFeeFraction).MulInt64(splittableFee.Int64()).Int64())
 }
 
 func IsSendable(denom string) bool {

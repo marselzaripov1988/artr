@@ -9,7 +9,6 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	abci "github.com/cometbft/cometbft/abci/types"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -31,7 +30,7 @@ type Suite struct {
 	ctx     sdk.Context
 	k       earning.Keeper
 
-	bbHeader abci.RequestBeginBlock
+	bbHeader tmproto.Header
 }
 
 func (s *Suite) SetupTest() {
@@ -43,10 +42,8 @@ func (s *Suite) SetupTest() {
 	s.app, s.cleanup, s.ctx = app.NewAppFromGenesis(nil)
 	s.k = s.app.GetEarningKeeper()
 
-	s.bbHeader = abci.RequestBeginBlock{
-		Header: tmproto.Header{
-			ProposerAddress: util.MustParseConsPubKey(app.DefaultUser1ConsPubKey).Address().Bytes(),
-		},
+	s.bbHeader = tmproto.Header{
+		ProposerAddress: util.MustParseConsPubKey(app.DefaultUser1ConsPubKey).Address().Bytes(),
 	}
 }
 

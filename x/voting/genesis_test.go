@@ -13,7 +13,6 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
-	abci "github.com/cometbft/cometbft/abci/types"
 	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -38,7 +37,7 @@ type Suite struct {
 	ctx     sdk.Context
 	k       keeper.Keeper
 
-	bbHeader abci.RequestBeginBlock
+	bbHeader tmproto.Header
 }
 
 func (s *Suite) SetupTest() {
@@ -50,10 +49,8 @@ func (s *Suite) SetupTest() {
 	s.app, s.cleanup, s.ctx = app.NewAppFromGenesis(nil)
 	s.k = s.app.GetVotingKeeper()
 
-	s.bbHeader = abci.RequestBeginBlock{
-		Header: tmproto.Header{
-			ProposerAddress: util.MustParseConsPubKey(app.DefaultUser1ConsPubKey).Address().Bytes(),
-		},
+	s.bbHeader = tmproto.Header{
+		ProposerAddress: util.MustParseConsPubKey(app.DefaultUser1ConsPubKey).Address().Bytes(),
 	}
 }
 
@@ -256,9 +253,17 @@ func (s Suite) checkExportImport() {
 	)
 }
 
-func (s *Suite) nextBlock() (abci.ResponseEndBlock, abci.ResponseBeginBlock) {
-	ebr := s.app.EndBlocker(s.ctx, abci.RequestEndBlock{})
-	s.ctx = s.ctx.WithBlockHeight(s.ctx.BlockHeight() + 1).WithBlockTime(s.ctx.BlockTime().Add(30 * time.Second))
-	bbr := s.app.BeginBlocker(s.ctx, s.bbHeader)
+func (s *Suite) nextBlock() (sdk.EndBlock, sdk.BeginBlock) {
+	ebr, err := s.app.EndBlocker(s.ctx)
+	s.Require().NoError(err)
+	// Предложивший блок теперь берётся из контекста, а не из запроса.
+	// Заголовок ставится первым: WithBlockHeader заменяет его целиком, а
+	// время и высота блока хранятся именно в нём.
+	s.ctx = s.ctx.
+		WithBlockHeader(s.bbHeader).
+		WithBlockHeight(s.ctx.BlockHeight() + 1).
+		WithBlockTime(s.ctx.BlockTime().Add(30 * time.Second))
+	bbr, err := s.app.BeginBlocker(s.ctx)
+	s.Require().NoError(err)
 	return ebr, bbr
 }

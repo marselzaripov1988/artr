@@ -8,6 +8,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -61,15 +62,15 @@ func (s *Suite) TestBurn() {
 
 	s.Equal(
 		sdk.NewCoins(
-			sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(1_000_000000)),
-			sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(20_000_000000)),
+			sdk.NewCoin(util.ConfigMainDenom, math.NewInt(1_000_000000)),
+			sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(20_000_000000)),
 		).String(),
 		s.k.GetBalance(s.ctx, user).String(),
 	)
 	s.Equal(
 		sdk.NewCoins(
-			sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(2015_000_000000)),
-			sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(140_000_000000)),
+			sdk.NewCoin(util.ConfigMainDenom, math.NewInt(2015_000_000000)),
+			sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(140_000_000000)),
 		).String(),
 		sdk.Coins(s.k.GetSupply(s.ctx).Total).String(),
 	)
@@ -92,15 +93,15 @@ func (s *Suite) TestBurn() {
 
 	s.Equal(
 		sdk.NewCoins(
-			sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(900_000000)),
-			sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(20_000_000000)),
+			sdk.NewCoin(util.ConfigMainDenom, math.NewInt(900_000000)),
+			sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(20_000_000000)),
 		).String(),
 		s.k.GetBalance(s.ctx, user).String(),
 	)
 	s.Equal(
 		sdk.NewCoins(
-			sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(2014_900_000000)),
-			sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(140_000_000000)),
+			sdk.NewCoin(util.ConfigMainDenom, math.NewInt(2014_900_000000)),
+			sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(140_000_000000)),
 		).String(),
 		sdk.Coins(s.k.GetSupply(s.ctx).Total).String(),
 	)
@@ -128,13 +129,13 @@ func (s *Suite) TestSendWithBlockedAddress() {
 
 	s.Equal(
 		sdk.NewCoins(
-			sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(1_000_000000)),
-			sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(20_000_000000)),
+			sdk.NewCoin(util.ConfigMainDenom, math.NewInt(1_000_000000)),
+			sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(20_000_000000)),
 		),
 		s.k.GetBalance(s.ctx, user1),
 	)
 	s.Equal(
-		sdk.NewCoins(sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(1_000_000000))),
+		sdk.NewCoins(sdk.NewCoin(util.ConfigMainDenom, math.NewInt(1_000_000000))),
 		s.k.GetBalance(s.ctx, user15),
 	)
 
@@ -144,13 +145,13 @@ func (s *Suite) TestSendWithBlockedAddress() {
 
 	s.Equal(
 		sdk.NewCoins(
-			sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(999_999999)),
-			sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(20_000_000000)),
+			sdk.NewCoin(util.ConfigMainDenom, math.NewInt(999_999999)),
+			sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(20_000_000000)),
 		),
 		s.k.GetBalance(s.ctx, user1),
 	)
 	s.Equal(
-		sdk.NewCoins(sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(1_000_000001))),
+		sdk.NewCoins(sdk.NewCoin(util.ConfigMainDenom, math.NewInt(1_000_000001))),
 		s.k.GetBalance(s.ctx, user15),
 	)
 
@@ -160,13 +161,13 @@ func (s *Suite) TestSendWithBlockedAddress() {
 
 	s.Equal(
 		sdk.NewCoins(
-			sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(999_999999)),
-			sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(20_000_000000)),
+			sdk.NewCoin(util.ConfigMainDenom, math.NewInt(999_999999)),
+			sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(20_000_000000)),
 		),
 		s.k.GetBalance(s.ctx, user1),
 	)
 	s.Equal(
-		sdk.NewCoins(sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(1_000_000001))),
+		sdk.NewCoins(sdk.NewCoin(util.ConfigMainDenom, math.NewInt(1_000_000001))),
 		s.k.GetBalance(s.ctx, user15),
 	)
 }

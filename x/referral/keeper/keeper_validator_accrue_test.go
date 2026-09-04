@@ -9,9 +9,10 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/suite"
 
+	"cosmossdk.io/math"
+	"cosmossdk.io/store/prefix"
+	storeTypes "cosmossdk.io/store/types"
 	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/cosmos/cosmos-sdk/store/prefix"
-	storeTypes "github.com/cosmos/cosmos-sdk/store/types"
 	"github.com/cosmos/cosmos-sdk/testutil/testdata"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authK "github.com/cosmos/cosmos-sdk/x/auth/keeper"
@@ -95,10 +96,10 @@ func (s *VASuite) TestReferralValidatorFees() {
 			s.k.SetActive(s.ctx, addr.String(), true, true),
 			s.bk.SetBalance(s.ctx, addr, sdk.Coins{sdk.Coin{
 				Denom:  util.ConfigMainDenom,
-				Amount: sdk.NewInt(1),
+				Amount: math.NewInt(1),
 			}, sdk.Coin{
 				Denom:  util.ConfigDelegatedDenom,
-				Amount: sdk.NewInt(1),
+				Amount: math.NewInt(1),
 			}}),
 		)
 		accounts[i] = addr.String()
@@ -113,7 +114,7 @@ func (s *VASuite) TestReferralValidatorFees() {
 			s.setStatusHelper(addr.String(), status),
 			s.bk.SetBalance(s.ctx, addr, sdk.Coins{sdk.Coin{
 				Denom:  util.ConfigDelegatedDenom,
-				Amount: sdk.NewInt(50_000_000000),
+				Amount: math.NewInt(50_000_000000),
 			}}),
 			s.nk.SwitchOn(s.ctx, addr, consPubKey),
 		)

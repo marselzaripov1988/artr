@@ -5,10 +5,10 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/arterynetwork/artr/util"
 	"github.com/arterynetwork/artr/x/delegating/types"
@@ -56,7 +56,7 @@ func GetCmdDelegate() *cobra.Command {
 				return err
 			}
 
-			msg := types.NewMsgDelegate(clientCtx.GetFromAddress(), sdk.NewIntFromUint64(amount))
+			msg := types.NewMsgDelegate(clientCtx.GetFromAddress(), math.NewIntFromUint64(amount))
 			err = msg.ValidateBasic()
 			if err != nil {
 				return err
@@ -93,7 +93,7 @@ func GetCmdRevoke() *cobra.Command {
 				return err
 			}
 
-			msg := types.NewMsgRevoke(clientCtx.GetFromAddress(), sdk.NewIntFromUint64(amount))
+			msg := types.NewMsgRevoke(clientCtx.GetFromAddress(), math.NewIntFromUint64(amount))
 			err = msg.ValidateBasic()
 			if err != nil {
 				return err
@@ -130,7 +130,7 @@ func GetCmdExpressRevoke() *cobra.Command {
 				return err
 			}
 
-			msg := types.NewMsgExpressRevoke(clientCtx.GetFromAddress(), sdk.NewIntFromUint64(amount))
+			msg := types.NewMsgExpressRevoke(clientCtx.GetFromAddress(), math.NewIntFromUint64(amount))
 			err = msg.ValidateBasic()
 			if err != nil {
 				return err

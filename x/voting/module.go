@@ -8,12 +8,12 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
+	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codecTypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
-	abci "github.com/cometbft/cometbft/abci/types"
 
 	"github.com/arterynetwork/artr/x/voting/client/cli"
 	"github.com/arterynetwork/artr/x/voting/keeper"
@@ -139,17 +139,13 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, mrshl codec.JSONCodec) json.R
 	return mrshl.MustMarshalJSON(gs)
 }
 
-// BeginBlock returns the begin blocker for the voting module.
-func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {}
-
-// EndBlock returns the end blocker for the voting module. It returns no validator
-// updates.
-func (AppModule) EndBlock(_ sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
-	return []abci.ValidatorUpdate{}
-}
-
 // ConsensusVersion версия схемы состояния модуля. Требование SDK 0.43+:
 // менеджер модулей сравнивает её с записанной в сторе и по расхождению
 // запускает зарегистрированные миграции. Единица — исходная версия, с
 // которой модуль входит в новую схему.
 func (AppModule) ConsensusVersion() uint64 { return 1 }
+
+// IsAppModule и IsOnePerModuleType — метки appmodule.AppModule из SDK 0.50:
+// пустые методы, которыми модуль объявляет себя модулем.
+func (AppModule) IsAppModule()        {}
+func (AppModule) IsOnePerModuleType() {}

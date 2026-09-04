@@ -20,7 +20,7 @@ message MsgDelegate {
     (gogoproto.moretags) = "yaml:\"address\""
   ];
   string micro_coins = 2 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable)   = false,
     (gogoproto.jsontag)    = "micro_coins",
     (gogoproto.moretags)   = "yaml:\"micro_coins\""
@@ -38,7 +38,7 @@ message MsgRevoke {
     (gogoproto.moretags) = "yaml:\"address\""
   ];
   string micro_coins = 2 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable)   = false,
     (gogoproto.jsontag)    = "micro_coins",
     (gogoproto.moretags)   = "yaml:\"micro_coins\""
@@ -56,7 +56,7 @@ message MsgExpressRevoke {
     (gogoproto.moretags) = "yaml:\"address\""
   ];
   string micro_coins = 2 [
-    (gogoproto.customtype) = "github.com/cosmos/cosmos-sdk/types.Int",
+    (gogoproto.customtype) = "cosmossdk.io/math.Int",
     (gogoproto.nullable)   = false,
     (gogoproto.jsontag)    = "micro_coins",
     (gogoproto.moretags)   = "yaml:\"micro_coins\""

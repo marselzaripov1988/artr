@@ -8,12 +8,12 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
+	abci "github.com/cometbft/cometbft/abci/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec"
 	codecTypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
-	abci "github.com/cometbft/cometbft/abci/types"
 
 	"github.com/arterynetwork/artr/x/noding/client/cli"
 	"github.com/arterynetwork/artr/x/noding/keeper"
@@ -126,14 +126,13 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, mrshl codec.JSONCodec) json.R
 	return mrshl.MustMarshalJSON(gs)
 }
 
-// BeginBlock returns the begin blocker for the noding module.
-func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
-	BeginBlocker(ctx, req, am.keeper)
+// BeginBlock ведёт статистику подписей и наказывает нарушителей.
+func (am AppModule) BeginBlock(ctx context.Context) error {
+	return BeginBlocker(ctx, am.keeper)
 }
 
-// EndBlock returns the end blocker for the noding module. It returns no validator
-// updates.
-func (am AppModule) EndBlock(ctx sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
+// EndBlock возвращает обновления набора валидаторов.
+func (am AppModule) EndBlock(ctx context.Context) ([]abci.ValidatorUpdate, error) {
 	return EndBlocker(ctx, am.keeper)
 }
 
@@ -142,3 +141,8 @@ func (am AppModule) EndBlock(ctx sdk.Context, _ abci.RequestEndBlock) []abci.Val
 // запускает зарегистрированные миграции. Единица — исходная версия, с
 // которой модуль входит в новую схему.
 func (AppModule) ConsensusVersion() uint64 { return 1 }
+
+// IsAppModule и IsOnePerModuleType — метки appmodule.AppModule из SDK 0.50:
+// пустые методы, которыми модуль объявляет себя модулем.
+func (AppModule) IsAppModule()        {}
+func (AppModule) IsOnePerModuleType() {}

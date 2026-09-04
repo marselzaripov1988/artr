@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
 
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/arterynetwork/artr/util"
@@ -43,28 +44,28 @@ const MinimumStatus = STATUS_LUCKY
 const MaximumStatus = STATUS_ABSOLUTE_CHAMPION
 const HeroDeprecatedStatus = 8
 
-func NewInfo(referrer string, coins sdk.Int, delegated sdk.Int) Info {
-	zero := sdk.ZeroInt()
+func NewInfo(referrer string, coins math.Int, delegated math.Int) Info {
+	zero := math.ZeroInt()
 	return Info{
 		Status:          STATUS_LUCKY,
 		Referrer:        referrer,
-		Coins:           []sdk.Int{coins, zero, zero, zero, zero, zero, zero, zero, zero, zero, zero},
-		Delegated:       []sdk.Int{delegated, zero, zero, zero, zero, zero, zero, zero, zero, zero, zero},
+		Coins:           []math.Int{coins, zero, zero, zero, zero, zero, zero, zero, zero, zero, zero},
+		Delegated:       []math.Int{delegated, zero, zero, zero, zero, zero, zero, zero, zero, zero, zero},
 		Active:          false,
 		ActiveRefCounts: make([]uint64, 11),
 	}
 }
 
-func (r Info) CoinsAtLevelsUpTo(n int) sdk.Int {
-	result := sdk.NewInt(0)
+func (r Info) CoinsAtLevelsUpTo(n int) math.Int {
+	result := math.NewInt(0)
 	for i := 0; i <= n; i++ {
 		result = result.Add(r.Coins[i])
 	}
 	return result
 }
 
-func (r Info) DelegatedAtLevelsUpTo(n int) sdk.Int {
-	result := sdk.NewInt(0)
+func (r Info) DelegatedAtLevelsUpTo(n int) math.Int {
+	result := math.NewInt(0)
 	for i := 0; i <= n; i++ {
 		result = result.Add(r.Delegated[i])
 	}
@@ -99,10 +100,10 @@ func (r Info) GetTransition() sdk.AccAddress {
 
 func (r *Info) Normalize() {
 	for len(r.Coins) < 11 {
-		r.Coins = append(r.Coins, sdk.ZeroInt())
+		r.Coins = append(r.Coins, math.ZeroInt())
 	}
 	for len(r.Delegated) < 11 {
-		r.Delegated = append(r.Delegated, sdk.ZeroInt())
+		r.Delegated = append(r.Delegated, math.ZeroInt())
 	}
 	for len(r.ActiveRefCounts) < 11 {
 		r.ActiveRefCounts = append(r.ActiveRefCounts, uint64(0))

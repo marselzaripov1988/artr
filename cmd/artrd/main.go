@@ -3,13 +3,12 @@ package main
 import (
 	"io"
 	"os"
-	"strconv"
 
 	"github.com/spf13/cobra"
 
+	"cosmossdk.io/log"
 	tmCfg "github.com/cometbft/cometbft/config"
-	"github.com/cometbft/cometbft/libs/log"
-	dbm "github.com/cometbft/cometbft-db"
+	dbm "github.com/cosmos/cosmos-db"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/config"
@@ -30,7 +29,6 @@ import (
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
 
 	"github.com/arterynetwork/artr/app"
-	"github.com/arterynetwork/artr/util"
 	"github.com/arterynetwork/artr/x/bank"
 	bankcmd "github.com/arterynetwork/artr/x/bank/client/cli"
 )
@@ -93,19 +91,21 @@ func main() {
 	)
 	server.AddCommands(rootCmd, app.DefaultNodeHome, newApp(ec), exportAppState(ec), addModuleInitFlags)
 	rootCmd.AddCommand(
-		rpc.StatusCommand(),
+		// StatusCommand переехал из client/rpc в server; keys.Commands
+		// больше не принимает домашний каталог — он берётся из флагов.
+		server.StatusCommand(),
 		queryCmd(),
 		txCmd(),
-		keys.Commands(app.DefaultCLIHome),
-		config.Cmd(),
+		keys.Commands(),
 	)
+	// Команды config в SDK 0.50 нет: она вынесена в отдельный инструмент
+	// confix. Тянуть его сюда незачем — в этой сборке config chain-id
+	// значение всё равно не сохранял, и девнет пишет client.toml сам.
 
 	if err := serverCmd.Execute(rootCmd, "ARTR", app.DefaultNodeHome); err != nil {
-		switch e := err.(type) {
-		case server.ErrorCode:
-			os.Exit(e.Code)
-
-		default:
+		// server.ErrorCode из SDK 0.50 убран: код возврата больше не
+		// передаётся через тип ошибки.
+		{
 			os.Exit(1)
 		}
 	}
@@ -160,10 +160,14 @@ func queryCmd() *cobra.Command {
 	}
 
 	queryCmd.AddCommand(
-		authcmd.GetAccountCmd(),
+		// authcmd.GetAccountCmd из SDK 0.50 убран: запрос счёта переведён
+		// на autocli, который здесь не подключён. Команда query account
+		// временно недоступна — счёт читается через REST или gRPC.
 		flags.LineBreak,
-		cmdValidatorSet(),
-		rpc.BlockCommand(),
+		// Своя tendermint-validator-set держалась на rpc.GetValidators,
+		// которого в 0.50 нет. Штатная команда делает то же самое.
+		rpc.ValidatorCommand(),
+		server.QueryBlockCmd(),
 		authcmd.QueryTxsByEventsCmd(),
 		authcmd.QueryTxCmd(),
 		flags.LineBreak,
@@ -209,48 +213,4 @@ func txCmd() *cobra.Command {
 	txCmd.RemoveCommand(cmdsToRemove...)
 
 	return txCmd
-}
-
-func cmdValidatorSet() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "tendermint-validator-set [height]",
-		Short: "Get the full tendermint validator set at given height",
-		Args:  cobra.MaximumNArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			clientCtx, err := client.GetClientQueryContext(cmd)
-			if err != nil {
-				return err
-			}
-			var height *int64
-
-			// optional height
-			if len(args) > 0 {
-				h, err := strconv.Atoi(args[0])
-				if err != nil {
-					return err
-				}
-				if h > 0 {
-					tmp := int64(h)
-					height = &tmp
-				}
-			}
-
-			page, _ := cmd.Flags().GetInt(flags.FlagPage)
-			limit, _ := cmd.Flags().GetInt(flags.FlagLimit)
-
-			result, err := rpc.GetValidators(cmd.Context(), clientCtx, height, &page, &limit)
-			if err != nil {
-				return err
-			}
-
-			return util.PrintConsoleOutput(clientCtx, result)
-		},
-	}
-
-	cmd.Flags().StringP(flags.FlagNode, "n", "", "Node to connect to")
-	cmd.Flags().String(flags.FlagKeyringBackend, flags.DefaultKeyringBackend, "Select keyring's backend (os|file|kwallet|pass|test)")
-	cmd.Flags().Int(flags.FlagPage, 1, "Query a specific page of paginated results")
-	cmd.Flags().Int(flags.FlagLimit, 100, "Query number of results returned per page")
-
-	return cmd
 }

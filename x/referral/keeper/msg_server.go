@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	errorsmod "cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -43,7 +44,7 @@ func (s MsgServer) ResolveTransition(ctx context.Context, msg *types.MsgResolveT
 		return nil, errors.Wrap(err, "cannot get subject's current referrer")
 	}
 	if msg.Signer != referrer {
-		return nil, sdkerrors.Wrap(sdkerrors.ErrUnauthorized, "tx must be signed by the subject's current referrer")
+		return nil, errorsmod.Wrap(sdkerrors.ErrUnauthorized, "tx must be signed by the subject's current referrer")
 	}
 	if msg.GetApproved() {
 		err = s.k.AffirmTransition(sdkCtx, msg.Subject)

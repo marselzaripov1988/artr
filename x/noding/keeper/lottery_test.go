@@ -5,6 +5,7 @@ package keeper_test
 
 import (
 	"github.com/arterynetwork/artr/util"
+	tmproto "github.com/cometbft/cometbft/proto/tendermint/types"
 	"io/ioutil"
 	"testing"
 
@@ -231,7 +232,9 @@ func (s *LotterySuite) votes(data map[int]bool) []abci.VoteInfo {
 				Address: s.pubKeys[n].Address().Bytes(),
 				Power:   10,
 			},
-			SignedLastBlock: signed,
+			// Пропуском считается только отсутствие — так же, как в
+			// рабочем коде и в x/slashing самого SDK.
+			BlockIdFlag: blockIDFlag(signed),
 		})
 	}
 	return result
@@ -270,4 +273,13 @@ func (s *LotterySuite) checkUpdates(expected map[int]int64, actual []abci.Valida
 			}
 		}
 	}
+}
+
+// blockIDFlag переводит прежнее булево «подписал ли» в трёхзначный флаг
+// CometBFT 0.38.
+func blockIDFlag(signed bool) tmproto.BlockIDFlag {
+	if signed {
+		return tmproto.BlockIDFlagCommit
+	}
+	return tmproto.BlockIDFlagAbsent
 }

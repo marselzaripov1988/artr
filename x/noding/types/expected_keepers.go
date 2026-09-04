@@ -1,6 +1,7 @@
 package types
 
 import (
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 
@@ -18,7 +19,7 @@ type ParamSubspace interface {
 
 type ReferralKeeper interface {
 	GetStatus(ctx sdk.Context, acc string) (referral.Status, error)
-	GetDelegatedInNetwork(ctx sdk.Context, acc string, maxDepth int) (sdk.Int, error)
+	GetDelegatedInNetwork(ctx sdk.Context, acc string, maxDepth int) (math.Int, error)
 }
 
 type AccountKeeper interface {

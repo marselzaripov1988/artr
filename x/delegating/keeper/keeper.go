@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"time"
 
+	"cosmossdk.io/log"
 	"github.com/pkg/errors"
-	"github.com/cometbft/cometbft/libs/log"
 
+	errorsmod "cosmossdk.io/errors"
+	"cosmossdk.io/math"
+	"cosmossdk.io/store/prefix"
+	storeTypes "cosmossdk.io/store/types"
 	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/cosmos/cosmos-sdk/store/prefix"
-	storeTypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -67,7 +69,7 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
-func (k Keeper) Revoke(ctx sdk.Context, acc sdk.AccAddress, uartrs sdk.Int, express bool) error {
+func (k Keeper) Revoke(ctx sdk.Context, acc sdk.AccAddress, uartrs math.Int, express bool) error {
 	if uartrs.IsZero() {
 		return nil
 	}
@@ -83,7 +85,7 @@ func (k Keeper) Revoke(ctx sdk.Context, acc sdk.AccAddress, uartrs sdk.Int, expr
 	)
 
 	if uartrs.GT(current) {
-		err = sdkerrors.Wrap(sdkerrors.ErrInsufficientFunds, "cannot revoke from delegation more than delegated")
+		err = errorsmod.Wrap(sdkerrors.ErrInsufficientFunds, "cannot revoke from delegation more than delegated")
 		k.Logger(ctx).Error(err.Error())
 		return err
 	}
@@ -102,7 +104,7 @@ func (k Keeper) Revoke(ctx sdk.Context, acc sdk.AccAddress, uartrs sdk.Int, expr
 	} else {
 		revokeParams = k.GetParams(ctx).ExpressRevoke
 	}
-	uartrrs := uartrs.Sub(sdk.NewInt(revokeParams.Burn.MulInt64(uartrs.Int64()).Int64()))
+	uartrrs := uartrs.Sub(math.NewInt(revokeParams.Burn.MulInt64(uartrs.Int64()).Int64()))
 	if err = k.freeze(ctx, acc, uartrs, uartrrs); err != nil {
 		k.Logger(ctx).Error(err.Error())
 		return err
@@ -126,8 +128,8 @@ func (k Keeper) Revoke(ctx sdk.Context, acc sdk.AccAddress, uartrs sdk.Int, expr
 	return nil
 }
 
-func (k Keeper) Delegate(ctx sdk.Context, acc sdk.AccAddress, uartrs sdk.Int) error {
-	if uartrs.LT(sdk.NewInt(k.GetParams(ctx).MinDelegate)) {
+func (k Keeper) Delegate(ctx sdk.Context, acc sdk.AccAddress, uartrs math.Int) error {
+	if uartrs.LT(math.NewInt(k.GetParams(ctx).MinDelegate)) {
 		return types.ErrLessThanMinimum
 	}
 
@@ -260,14 +262,14 @@ func (k Keeper) GetAccumulation(ctx sdk.Context, acc sdk.AccAddress) (*types.Acc
 //----------------------------------------------------------------------------------------------------------------------
 // PRIVATE FUNCTIONS
 
-func (k Keeper) getDelegated(ctx sdk.Context, acc sdk.AccAddress) (delegated sdk.Int, undelegating sdk.Int) {
+func (k Keeper) getDelegated(ctx sdk.Context, acc sdk.AccAddress) (delegated math.Int, undelegating math.Int) {
 	balance := k.bankKeeper.GetBalance(ctx, acc)
 	delegated = balance.AmountOf(util.ConfigDelegatedDenom)
 	undelegating = balance.AmountOf(util.ConfigRevokingDenom)
 	return
 }
 
-func (k Keeper) delegate(ctx sdk.Context, acc sdk.AccAddress, uartrs sdk.Int) error {
+func (k Keeper) delegate(ctx sdk.Context, acc sdk.AccAddress, uartrs math.Int) error {
 	if uartrs.IsZero() {
 		return nil
 	}
@@ -293,7 +295,7 @@ func (k Keeper) delegate(ctx sdk.Context, acc sdk.AccAddress, uartrs sdk.Int) er
 	return nil
 }
 
-func (k Keeper) freeze(ctx sdk.Context, acc sdk.AccAddress, uartrds sdk.Int, uartrrs sdk.Int) error {
+func (k Keeper) freeze(ctx sdk.Context, acc sdk.AccAddress, uartrds math.Int, uartrrs math.Int) error {
 	if uartrds.IsZero() {
 		return nil
 	}
@@ -326,7 +328,7 @@ func (k Keeper) freeze(ctx sdk.Context, acc sdk.AccAddress, uartrds sdk.Int, uar
 	return nil
 }
 
-func (k Keeper) undelegate(ctx sdk.Context, acc sdk.AccAddress, uartrs sdk.Int) error {
+func (k Keeper) undelegate(ctx sdk.Context, acc sdk.AccAddress, uartrs math.Int) error {
 	if uartrs.IsZero() {
 		return nil
 	}
@@ -358,7 +360,7 @@ func (k Keeper) undelegate(ctx sdk.Context, acc sdk.AccAddress, uartrs sdk.Int) 
 	return nil
 }
 
-func (k Keeper) accrue(ctx sdk.Context, acc sdk.AccAddress, ucoins sdk.Int, bonusFlags uint32) {
+func (k Keeper) accrue(ctx sdk.Context, acc sdk.AccAddress, ucoins math.Int, bonusFlags uint32) {
 	if ucoins.IsZero() {
 		return
 	}
@@ -399,7 +401,7 @@ func (k Keeper) accrue(ctx sdk.Context, acc sdk.AccAddress, ucoins sdk.Int, bonu
 	)
 }
 
-func (k Keeper) accrueToValidator(ctx sdk.Context, acc sdk.AccAddress, ucoins sdk.Int) {
+func (k Keeper) accrueToValidator(ctx sdk.Context, acc sdk.AccAddress, ucoins math.Int) {
 	if ucoins.IsZero() {
 		return
 	}
@@ -432,7 +434,7 @@ func (k Keeper) accrueToValidator(ctx sdk.Context, acc sdk.AccAddress, ucoins sd
 			continue
 		}
 		totalFee += x
-		outputs = append(outputs, bank.NewOutput(fee.GetBeneficiary(), sdk.NewCoins(sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(x)))))
+		outputs = append(outputs, bank.NewOutput(fee.GetBeneficiary(), sdk.NewCoins(sdk.NewCoin(util.ConfigMainDenom, math.NewInt(x)))))
 		event.Accounts = append(event.Accounts, fee.Beneficiary)
 		event.Ucoins = append(event.Ucoins, uint64(x))
 	}
@@ -443,7 +445,7 @@ func (k Keeper) accrueToValidator(ctx sdk.Context, acc sdk.AccAddress, ucoins sd
 				panic(err)
 			}
 		}
-		emission := sdk.NewCoins(sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(totalFee)))
+		emission := sdk.NewCoins(sdk.NewCoin(util.ConfigMainDenom, math.NewInt(totalFee)))
 		supply := k.bankKeeper.GetSupply(ctx)
 		supply.Inflate(emission)
 		k.bankKeeper.SetSupply(ctx, supply)
@@ -473,15 +475,15 @@ func (k Keeper) accruePart(ctx sdk.Context, acc sdk.AccAddress, item *types.Reco
 		interest := k.percent(ctx, delegated, isActiveProfile, isActiveValidator, isActiveVpn, isActiveStorage).Mul(dayPart).Reduce().MulInt64(delegated.Int64()).Int64()
 		interestToValidator := dayPart.Reduce().MulInt64(delegated.Int64()).Int64()
 		if interest > 0 {
-			k.accrue(ctx, acc, sdk.NewInt(interest), bonusFlags)
-			k.accrueToValidator(ctx, acc, sdk.NewInt(interestToValidator))
+			k.accrue(ctx, acc, math.NewInt(interest), bonusFlags)
+			k.accrueToValidator(ctx, acc, math.NewInt(interestToValidator))
 		}
 		k.scheduleKeeper.Delete(ctx, *item.NextAccrue, types.AccrueHookName, acc)
 	}
 	item.NextAccrue = &nextPayment
 }
 
-func (k Keeper) percent(ctx sdk.Context, delegated sdk.Int, isActiveProfile bool, isActiveValidator bool, isActiveVpn bool, isActiveStorage bool) util.Fraction {
+func (k Keeper) percent(ctx sdk.Context, delegated math.Int, isActiveProfile bool, isActiveValidator bool, isActiveVpn bool, isActiveStorage bool) util.Fraction {
 	var (
 		params  = k.GetParams(ctx)
 		table   = params.AccruePercentageTable
@@ -496,7 +498,7 @@ func (k Keeper) percent(ctx sdk.Context, delegated sdk.Int, isActiveProfile bool
 		if v {
 			bonus := util.FractionZero()
 			for _, step := range table {
-				if delegated.GTE(sdk.NewIntFromUint64(step.Start)) {
+				if delegated.GTE(math.NewIntFromUint64(step.Start)) {
 					bonus = step.PercentList[i]
 				} else {
 					break

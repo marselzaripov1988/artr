@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	errorsmod "cosmossdk.io/errors"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
@@ -87,7 +88,7 @@ func getCmdResolveTransition() *cobra.Command {
 				case "no", "n":
 					approved = false
 				default:
-					return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "cannot parse the 3rd argument")
+					return errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "cannot parse the 3rd argument")
 				}
 			}
 

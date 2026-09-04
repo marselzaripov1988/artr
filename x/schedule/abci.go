@@ -1,17 +1,19 @@
 package schedule
 
 import (
+	"context"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	abci "github.com/cometbft/cometbft/abci/types"
 
 	"github.com/arterynetwork/artr/x/schedule/keeper"
 )
 
-// BeginBlocker check for infraction evidence or downtime of validators
-// on every begin block
-func BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock, k keeper.Keeper) {
-	k.PerformSchedule(ctx)
+// BeginBlocker выполняет задачи, чей срок наступил.
+//
+// В SDK 0.50 обработчик принимает context.Context и возвращает ошибку:
+// ABCI 2.0 свёл BeginBlock и EndBlock в FinalizeBlock, и данные о блоке
+// приходят не аргументом, а через контекст.
+func BeginBlocker(ctx context.Context, k keeper.Keeper) error {
+	k.PerformSchedule(sdk.UnwrapSDKContext(ctx))
+	return nil
 }
-
-// EndBlocker called every block, process inflation, update validator set.
-func EndBlocker(ctx sdk.Context, k keeper.Keeper) {}

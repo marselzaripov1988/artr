@@ -6,7 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
 
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	errorsmod "cosmossdk.io/errors"
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
 
 	"github.com/arterynetwork/artr/util"
@@ -179,19 +179,19 @@ func (p *Params) Validate() error {
 		return fmt.Errorf("params are nil")
 	}
 	if err := validateMaxValidators(p.MaxValidators); err != nil {
-		return sdkerrors.Wrap(err, "invalid MaxValidators")
+		return errorsmod.Wrap(err, "invalid MaxValidators")
 	}
 	if err := validateJailAfter(p.JailAfter); err != nil {
-		return sdkerrors.Wrap(err, "invalid JailAfter")
+		return errorsmod.Wrap(err, "invalid JailAfter")
 	}
 	if err := validateUnjailAfter(p.UnjailAfter); err != nil {
-		return sdkerrors.Wrap(err, "invalid UnjailAfter")
+		return errorsmod.Wrap(err, "invalid UnjailAfter")
 	}
 	if err := validateAdditionalValidators(p.LotteryValidators); err != nil {
-		return sdkerrors.Wrap(err, "invalid LotteryValidators")
+		return errorsmod.Wrap(err, "invalid LotteryValidators")
 	}
 	if err := validateMinCriteria(p.MinCriteria); err != nil {
-		return sdkerrors.Wrap(err, "invalid MinCriteria")
+		return errorsmod.Wrap(err, "invalid MinCriteria")
 	}
 	if err := validateVotingPower(p.VotingPower); err != nil {
 		return err

@@ -71,14 +71,14 @@ func (s Suite) TestBlocksInRowAndJail() {
 	}
 
 	s.nextBlock(user1key, []abci.VoteInfo{
-		{Validator: abci.Validator{Address: user1ca, Power: 10}, SignedLastBlock: true},
-		{Validator: abci.Validator{Address: user2ca, Power: 10}, SignedLastBlock: true},
-		{Validator: abci.Validator{Address: user3ca, Power: 10}, SignedLastBlock: false},
+		{Validator: abci.Validator{Address: user1ca, Power: 10}, BlockIdFlag: tmproto.BlockIDFlagCommit},
+		{Validator: abci.Validator{Address: user2ca, Power: 10}, BlockIdFlag: tmproto.BlockIDFlagCommit},
+		{Validator: abci.Validator{Address: user3ca, Power: 10}, BlockIdFlag: tmproto.BlockIDFlagAbsent},
 	}, nil)
 	s.nextBlock(user1key, []abci.VoteInfo{
-		{Validator: abci.Validator{Address: user1ca, Power: 10}, SignedLastBlock: true},
-		{Validator: abci.Validator{Address: user2ca, Power: 10}, SignedLastBlock: false},
-		{Validator: abci.Validator{Address: user3ca, Power: 10}, SignedLastBlock: false},
+		{Validator: abci.Validator{Address: user1ca, Power: 10}, BlockIdFlag: tmproto.BlockIDFlagCommit},
+		{Validator: abci.Validator{Address: user2ca, Power: 10}, BlockIdFlag: tmproto.BlockIDFlagAbsent},
+		{Validator: abci.Validator{Address: user3ca, Power: 10}, BlockIdFlag: tmproto.BlockIDFlagAbsent},
 	}, nil)
 	{
 		d, _ := s.k.Get(s.ctx, user3)
@@ -98,12 +98,12 @@ func (s Suite) TestJailAndSwitchOff() {
 	}
 
 	s.nextBlock(user1key, []abci.VoteInfo{
-		{Validator: abci.Validator{Address: user1ca, Power: 10}, SignedLastBlock: true},
-		{Validator: abci.Validator{Address: user2ca, Power: 10}, SignedLastBlock: false},
+		{Validator: abci.Validator{Address: user1ca, Power: 10}, BlockIdFlag: tmproto.BlockIDFlagCommit},
+		{Validator: abci.Validator{Address: user2ca, Power: 10}, BlockIdFlag: tmproto.BlockIDFlagAbsent},
 	}, nil)
 	s.nextBlock(user1key, []abci.VoteInfo{
-		{Validator: abci.Validator{Address: user1ca, Power: 10}, SignedLastBlock: true},
-		{Validator: abci.Validator{Address: user2ca, Power: 10}, SignedLastBlock: false},
+		{Validator: abci.Validator{Address: user1ca, Power: 10}, BlockIdFlag: tmproto.BlockIDFlagCommit},
+		{Validator: abci.Validator{Address: user2ca, Power: 10}, BlockIdFlag: tmproto.BlockIDFlagAbsent},
 	}, nil)
 	{
 		d, _ := s.k.Get(s.ctx, user2)
@@ -124,12 +124,12 @@ func (s Suite) TestUnjail() {
 	}
 
 	s.nextBlock(user1key, []abci.VoteInfo{
-		{Validator: abci.Validator{Address: user1ca, Power: 10}, SignedLastBlock: true},
-		{Validator: abci.Validator{Address: user2ca, Power: 10}, SignedLastBlock: false},
+		{Validator: abci.Validator{Address: user1ca, Power: 10}, BlockIdFlag: tmproto.BlockIDFlagCommit},
+		{Validator: abci.Validator{Address: user2ca, Power: 10}, BlockIdFlag: tmproto.BlockIDFlagAbsent},
 	}, nil)
 	s.nextBlock(user1key, []abci.VoteInfo{
-		{Validator: abci.Validator{Address: user1ca, Power: 10}, SignedLastBlock: true},
-		{Validator: abci.Validator{Address: user2ca, Power: 10}, SignedLastBlock: false},
+		{Validator: abci.Validator{Address: user1ca, Power: 10}, BlockIdFlag: tmproto.BlockIDFlagCommit},
+		{Validator: abci.Validator{Address: user2ca, Power: 10}, BlockIdFlag: tmproto.BlockIDFlagAbsent},
 	}, nil)
 	{
 		d, _ := s.k.Get(s.ctx, user2)
@@ -139,8 +139,8 @@ func (s Suite) TestUnjail() {
 
 	s.NoError(s.k.Unjail(s.ctx, user2))
 	s.nextBlock(user1key, []abci.VoteInfo{
-		{Validator: abci.Validator{Address: user1ca, Power: 10}, SignedLastBlock: true},
-		{Validator: abci.Validator{Address: user2ca, Power: 10}, SignedLastBlock: true},
+		{Validator: abci.Validator{Address: user1ca, Power: 10}, BlockIdFlag: tmproto.BlockIDFlagCommit},
+		{Validator: abci.Validator{Address: user2ca, Power: 10}, BlockIdFlag: tmproto.BlockIDFlagCommit},
 	}, nil)
 	s.checkExportImport()
 }
@@ -167,9 +167,9 @@ func (s Suite) TestByzantine() {
 	s.nextBlock(
 		user1key,
 		[]abci.VoteInfo{
-			{Validator: val1, SignedLastBlock: true},
-			{Validator: val2, SignedLastBlock: true},
-			{Validator: val3, SignedLastBlock: true},
+			{Validator: val1, BlockIdFlag: tmproto.BlockIDFlagCommit},
+			{Validator: val2, BlockIdFlag: tmproto.BlockIDFlagCommit},
+			{Validator: val3, BlockIdFlag: tmproto.BlockIDFlagCommit},
 		},
 		[]abci.Misbehavior{
 			{
@@ -182,9 +182,9 @@ func (s Suite) TestByzantine() {
 	s.nextBlock(
 		user1key,
 		[]abci.VoteInfo{
-			{Validator: val1, SignedLastBlock: true},
-			{Validator: val2, SignedLastBlock: false},
-			{Validator: val3, SignedLastBlock: false},
+			{Validator: val1, BlockIdFlag: tmproto.BlockIDFlagCommit},
+			{Validator: val2, BlockIdFlag: tmproto.BlockIDFlagAbsent},
+			{Validator: val3, BlockIdFlag: tmproto.BlockIDFlagAbsent},
 		},
 		[]abci.Misbehavior{
 			{
@@ -274,17 +274,26 @@ func (s Suite) checkExportImport() {
 	)
 }
 
-func (s *Suite) nextBlock(proposer crypto.PubKey, votes []abci.VoteInfo, byzantine []abci.Misbehavior) (abci.ResponseEndBlock, abci.ResponseBeginBlock) {
-	ebr := s.app.EndBlocker(s.ctx, abci.RequestEndBlock{Height: s.ctx.BlockHeight()})
-	s.ctx = s.ctx.WithBlockHeight(s.ctx.BlockHeight() + 1)
-	bbr := s.app.BeginBlocker(s.ctx, abci.RequestBeginBlock{
-		Header: tmproto.Header{
-			ProposerAddress: proposer.Address().Bytes(),
-		},
-		LastCommitInfo: abci.CommitInfo{
-			Votes: votes,
-		},
-		ByzantineValidators: byzantine,
-	})
+func (s *Suite) nextBlock(proposer crypto.PubKey, votes []abci.VoteInfo, byzantine []abci.Misbehavior) (sdk.EndBlock, sdk.BeginBlock) {
+	ebr, err := s.app.EndBlocker(s.ctx)
+	s.Require().NoError(err)
+	// В ABCI 2.0 обработчик не получает запроса: предложивший блок, голоса
+	// предыдущего блока и свидетельства о нарушениях кладутся в контекст.
+	//
+	// Заголовок правим по месту, а не собираем заново: WithBlockHeader
+	// заменяет его целиком, а в нём же лежат время и высота блока.
+	header := s.ctx.BlockHeader()
+	header.ProposerAddress = proposer.Address().Bytes()
+	s.ctx = s.ctx.
+		WithBlockHeader(header).
+		WithBlockHeight(s.ctx.BlockHeight() + 1).
+		WithVoteInfos(votes).
+		WithCometInfo(app.TestCometInfo{
+			Proposer:    proposer.Address().Bytes(),
+			Misbehavior: byzantine,
+		})
+
+	bbr, err := s.app.BeginBlocker(s.ctx)
+	s.Require().NoError(err)
 	return ebr, bbr
 }

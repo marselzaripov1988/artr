@@ -7,9 +7,9 @@ import (
 
 	"github.com/pkg/errors"
 
-	store "github.com/cosmos/cosmos-sdk/store/types"
+	errorsmod "cosmossdk.io/errors"
+	store "cosmossdk.io/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
 	"github.com/arterynetwork/artr/util"
 	"github.com/arterynetwork/artr/x/referral/types"
@@ -240,7 +240,7 @@ func (bu *bunchUpdater) commit() error {
 			continue
 		}
 		if err := bu.k.callback(cb.event, bu.ctx, cb.acc); err != nil {
-			return sdkerrors.Wrap(err, cb.event+" callback failed for "+cb.acc)
+			return errorsmod.Wrap(err, cb.event+" callback failed for "+cb.acc)
 		}
 	}
 	return nil

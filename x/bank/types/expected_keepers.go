@@ -1,21 +1,21 @@
 package types
 
 import (
+	"context"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	auth "github.com/cosmos/cosmos-sdk/x/auth/types"
 )
 
 // AccountKeeper defines the account contract that must be fulfilled when
 // creating a x/bank keeper.
 type AccountKeeper interface {
-	NewAccountWithAddress(ctx sdk.Context, addr sdk.AccAddress) auth.AccountI
+	NewAccountWithAddress(ctx context.Context, addr sdk.AccAddress) sdk.AccountI
 
-	GetAccount(ctx sdk.Context, addr sdk.AccAddress) auth.AccountI
-	GetAllAccounts(ctx sdk.Context) []auth.AccountI
-	SetAccount(ctx sdk.Context, acc auth.AccountI)
+	GetAccount(ctx context.Context, addr sdk.AccAddress) sdk.AccountI
+	GetAllAccounts(ctx context.Context) []sdk.AccountI
+	SetAccount(ctx context.Context, acc sdk.AccountI)
 
-	IterateAccounts(ctx sdk.Context, process func(auth.AccountI) bool)
+	IterateAccounts(ctx context.Context, process func(sdk.AccountI) bool)
 
 	GetModuleAddress(moduleName string) sdk.AccAddress
-	GetModuleAccount(ctx sdk.Context, moduleName string) auth.ModuleAccountI
+	GetModuleAccount(ctx context.Context, moduleName string) sdk.ModuleAccountI
 }

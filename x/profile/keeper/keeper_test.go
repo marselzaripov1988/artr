@@ -9,6 +9,7 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"cosmossdk.io/math"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/testutil/testdata"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -159,8 +160,8 @@ func (s *Suite) TestRename() {
 	s.Equal("user2", p.Nickname)
 	s.Equal(
 		sdk.NewCoins(
-			sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(1_000_000000)),
-			sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(20_000_000000)),
+			sdk.NewCoin(util.ConfigMainDenom, math.NewInt(1_000_000000)),
+			sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(20_000_000000)),
 		), // from genesis
 		s.bk.GetBalance(s.ctx, user),
 	)
@@ -173,8 +174,8 @@ func (s *Suite) TestRename() {
 	s.Equal("user2a", p.Nickname)
 	s.Equal(
 		sdk.NewCoins(
-			sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(999_000000)),
-			sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(20_000_000000)),
+			sdk.NewCoin(util.ConfigMainDenom, math.NewInt(999_000000)),
+			sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(20_000_000000)),
 		), // -1 ARTR for rename
 		s.bk.GetBalance(s.ctx, user),
 	)
@@ -189,8 +190,8 @@ func (s *Suite) TestRename_InsufficientFunds() {
 	s.Equal("user2", p.Nickname)
 	s.Equal(
 		sdk.NewCoins(
-			sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(999999)),
-			sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(20_000_000000)),
+			sdk.NewCoin(util.ConfigMainDenom, math.NewInt(999999)),
+			sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(20_000_000000)),
 		), // from genesis
 		s.bk.GetBalance(s.ctx, user),
 	)
@@ -203,8 +204,8 @@ func (s *Suite) TestRename_InsufficientFunds() {
 	s.Equal("user2", p.Nickname)
 	s.Equal(
 		sdk.NewCoins(
-			sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(999999)),
-			sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(20_000_000000)),
+			sdk.NewCoin(util.ConfigMainDenom, math.NewInt(999999)),
+			sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(20_000_000000)),
 		), // nothing changed
 		s.bk.GetBalance(s.ctx, user),
 	)
@@ -218,8 +219,8 @@ func (s *Suite) TestRename_ClearAndSet() {
 	s.Equal("user2", p.Nickname)
 	s.Equal(
 		sdk.NewCoins(
-			sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(1_000_000000)),
-			sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(20_000_000000)),
+			sdk.NewCoin(util.ConfigMainDenom, math.NewInt(1_000_000000)),
+			sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(20_000_000000)),
 		), // from genesis
 		s.bk.GetBalance(s.ctx, user),
 	)
@@ -232,8 +233,8 @@ func (s *Suite) TestRename_ClearAndSet() {
 	s.Equal("", p.Nickname)
 	s.Equal(
 		sdk.NewCoins(
-			sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(1_000_000000)),
-			sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(20_000_000000)),
+			sdk.NewCoin(util.ConfigMainDenom, math.NewInt(1_000_000000)),
+			sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(20_000_000000)),
 		), // nothing changed, removal is free
 		s.bk.GetBalance(s.ctx, user),
 	)
@@ -246,8 +247,8 @@ func (s *Suite) TestRename_ClearAndSet() {
 	s.Equal("user2", p.Nickname)
 	s.Equal(
 		sdk.NewCoins(
-			sdk.NewCoin(util.ConfigMainDenom, sdk.NewInt(999_000000)),
-			sdk.NewCoin(util.ConfigDelegatedDenom, sdk.NewInt(20_000_000000)),
+			sdk.NewCoin(util.ConfigMainDenom, math.NewInt(999_000000)),
+			sdk.NewCoin(util.ConfigDelegatedDenom, math.NewInt(20_000_000000)),
 		), // -1 ARTR
 		s.bk.GetBalance(s.ctx, user),
 	)

@@ -1,6 +1,7 @@
 package types
 
 import (
+	"cosmossdk.io/math"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/golang/protobuf/proto"
 	"github.com/pkg/errors"
@@ -10,7 +11,7 @@ import (
 var _ sdk.Msg = &MsgDelegate{}
 
 // NewMsgDelegate creates a new MsgDelegate instance
-func NewMsgDelegate(acc sdk.AccAddress, ucoins sdk.Int) MsgDelegate {
+func NewMsgDelegate(acc sdk.AccAddress, ucoins math.Int) MsgDelegate {
 	return MsgDelegate{
 		Address:    acc.String(),
 		MicroCoins: ucoins,
@@ -62,7 +63,7 @@ func (msg MsgDelegate) GetAddress() sdk.AccAddress {
 var _ sdk.Msg = &MsgRevoke{}
 
 // NewMsgDelegate creates a new MsgDelegate instance
-func NewMsgRevoke(acc sdk.AccAddress, ucoins sdk.Int) MsgRevoke {
+func NewMsgRevoke(acc sdk.AccAddress, ucoins math.Int) MsgRevoke {
 	return MsgRevoke{
 		Address:    acc.String(),
 		MicroCoins: ucoins,
@@ -114,7 +115,7 @@ func (msg MsgRevoke) GetAddress() sdk.AccAddress {
 var _ sdk.Msg = &MsgExpressRevoke{}
 
 // NewMsgDelegate creates a new MsgDelegate instance
-func NewMsgExpressRevoke(acc sdk.AccAddress, ucoins sdk.Int) MsgExpressRevoke {
+func NewMsgExpressRevoke(acc sdk.AccAddress, ucoins math.Int) MsgExpressRevoke {
 	return MsgExpressRevoke{
 		Address:    acc.String(),
 		MicroCoins: ucoins,

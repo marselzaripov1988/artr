@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	storeTypes "cosmossdk.io/store/types"
 	"encoding/binary"
 
 	"google.golang.org/grpc/codes"
@@ -138,7 +139,7 @@ func (s QueryServer) Queue(ctx context.Context, _ *types.QueueRequest) (resp *ty
 	sdkCtx := sdk.UnwrapSDKContext(ctx)
 	store := sdkCtx.KVStore(k.indexStoreKey)
 	resp = &types.QueueResponse{}
-	it := sdk.KVStorePrefixIterator(store, IdxPrefixLotteryQueue)
+	it := storeTypes.KVStorePrefixIterator(store, IdxPrefixLotteryQueue)
 	defer func() {
 		it.Close()
 

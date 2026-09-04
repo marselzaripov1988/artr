@@ -1,15 +1,16 @@
 package keeper
 
 import (
+	errorsmod "cosmossdk.io/errors"
 	"fmt"
 
 	"github.com/pkg/errors"
 
-	"github.com/cometbft/cometbft/libs/log"
+	"cosmossdk.io/log"
 
+	"cosmossdk.io/store/prefix"
+	storeTypes "cosmossdk.io/store/types"
 	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/cosmos/cosmos-sdk/store/prefix"
-	storeTypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkErrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -137,7 +138,7 @@ func (k BaseViewKeeper) SpendableCoins(ctx sdk.Context, addr sdk.AccAddress) sdk
 func (k BaseViewKeeper) ValidateBalance(ctx sdk.Context, addr sdk.AccAddress) error {
 	acc := k.ak.GetAccount(ctx, addr)
 	if acc == nil {
-		return sdkErrors.Wrapf(sdkErrors.ErrUnknownAddress, "account %s does not exist", addr)
+		return errorsmod.Wrapf(sdkErrors.ErrUnknownAddress, "account %s does not exist", addr)
 	}
 
 	balances := k.GetBalance(ctx, addr)
