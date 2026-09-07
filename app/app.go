@@ -439,7 +439,7 @@ func NewArteryApp(
 	anteHandler, err := ante.NewAnteHandler(
 		ante.HandlerOptions{
 			AccountKeeper:   app.accountKeeper,
-			BankKeeper:      bankForAnte{k: app.bankKeeper},
+			BankKeeper:      bankAdapter{k: app.bankKeeper},
 			SignModeHandler: ec.TxConfig.SignModeHandler(),
 			SigGasConsumer:  ante.DefaultSigVerificationGasConsumer,
 		},

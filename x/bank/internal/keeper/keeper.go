@@ -10,6 +10,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	bankTypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 
 	"github.com/arterynetwork/artr/util"
 	"github.com/arterynetwork/artr/x/bank/types"
@@ -39,6 +40,13 @@ type Keeper = interface {
 	MintCoins(ctx sdk.Context, moduleName string, amt sdk.Coins) error
 	BurnCoins(ctx sdk.Context, moduleName string, amt sdk.Coins) error
 	BurnAccCoins(ctx sdk.Context, acc sdk.AccAddress, amt sdk.Coins) error
+
+	// Метаданные деномов нужны переводам по IBC: воучер вида ibc/<хеш>
+	// без описания кошельки покажут голым хешем.
+	GetDenomMetaData(ctx sdk.Context, denom string) (bankTypes.Metadata, bool)
+	HasDenomMetaData(ctx sdk.Context, denom string) bool
+	SetDenomMetaData(ctx sdk.Context, md bankTypes.Metadata)
+	IterateAllDenomMetaData(ctx sdk.Context, cb func(bankTypes.Metadata) bool)
 }
 
 // BaseKeeper manages transfers between accounts. It implements the Keeper interface.
