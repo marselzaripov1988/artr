@@ -45,13 +45,16 @@ import (
 	consensusTypes "github.com/cosmos/cosmos-sdk/x/consensus/types"
 
 	_ "github.com/arterynetwork/artr/client/docs/statik"
+	stakingTypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	ibcTransfer "github.com/cosmos/ibc-go/v10/modules/apps/transfer"
 	ibcTransferKeeper "github.com/cosmos/ibc-go/v10/modules/apps/transfer/keeper"
 	ibcTransferTypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
+
 	ibc "github.com/cosmos/ibc-go/v10/modules/core"
 	ibcPortTypes "github.com/cosmos/ibc-go/v10/modules/core/05-port/types"
 	ibcExported "github.com/cosmos/ibc-go/v10/modules/core/exported"
 	ibcKeeper "github.com/cosmos/ibc-go/v10/modules/core/keeper"
+	ibcTm "github.com/cosmos/ibc-go/v10/modules/light-clients/07-tendermint"
 
 	"github.com/arterynetwork/artr/util"
 	"github.com/arterynetwork/artr/x/bank"
@@ -381,6 +384,15 @@ func NewArteryApp(
 	ibcRouter.AddRoute(ibcTransferTypes.ModuleName, ibcTransfer.NewIBCModule(app.transferKeeper))
 	app.ibcKeeper.SetRouter(ibcRouter)
 
+	// Светлый клиент подключается отдельно: в ibc-go 10 клиенты вынесены в
+	// самостоятельные модули, и без регистрации маршрута цепочка не умеет
+	// разбирать даже тип ClientState — создание клиента падает на
+	// "unable to resolve type URL".
+	//
+	// Нужен один tendermint: solomachine у Artery применять негде.
+	tmLightClient := ibcTm.NewLightClientModule(ec.Marshaler, app.ibcKeeper.ClientKeeper.GetStoreProvider())
+	app.ibcKeeper.ClientKeeper.AddRoute(ibcTm.ModuleName, &tmLightClient)
+
 	// Исторические обработчики апгрейдов (2.0.1 ... 2.5.8) удалены намеренно.
 	//
 	// Переход на новую версию SDK делается способом, который команда уже
@@ -412,6 +424,7 @@ func NewArteryApp(
 		earning.NewAppModule(app.earningKeeper, app.bankKeeper, app.scheduleKeeper),
 		ibc.NewAppModule(app.ibcKeeper),
 		ibcTransfer.NewAppModule(app.transferKeeper),
+		ibcTm.NewAppModule(tmLightClient),
 		voting.NewAppModule(
 			app.votingKeeper, app.scheduleKeeper, app.upgradeKeeper, app.nodingKeeper, app.delegatingKeeper,
 			*app.referralKeeper, app.profileKeeper, app.earningKeeper,
@@ -487,6 +500,11 @@ func NewArteryApp(
 	// Маршрутизация сообщений и запросов — только через сервисы:
 	// legacy-роутеры (Router/QueryRouter) в 0.47 удалены.
 	app.mm.RegisterServices(module.NewConfigurator(ec.Marshaler, app.MsgServiceRouter(), app.GRPCQueryRouter()))
+
+	// Ответ на стандартный запрос параметров стейкинга. Модуля x/staking у
+	// Artery нет, но без этого ответа релееры не могут построить состояние
+	// светлого клиента и IBC не поднимается вовсе — см. staking_shim.go.
+	stakingTypes.RegisterQueryServer(app.GRPCQueryRouter(), stakingShim{})
 
 	// The initChainer handles translating the genesis.json file into initial state for the network
 	app.SetInitChainer(app.InitChainer)
