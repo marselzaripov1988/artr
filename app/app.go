@@ -45,6 +45,14 @@ import (
 	consensusTypes "github.com/cosmos/cosmos-sdk/x/consensus/types"
 
 	_ "github.com/arterynetwork/artr/client/docs/statik"
+	ibcTransfer "github.com/cosmos/ibc-go/v10/modules/apps/transfer"
+	ibcTransferKeeper "github.com/cosmos/ibc-go/v10/modules/apps/transfer/keeper"
+	ibcTransferTypes "github.com/cosmos/ibc-go/v10/modules/apps/transfer/types"
+	ibc "github.com/cosmos/ibc-go/v10/modules/core"
+	ibcPortTypes "github.com/cosmos/ibc-go/v10/modules/core/05-port/types"
+	ibcExported "github.com/cosmos/ibc-go/v10/modules/core/exported"
+	ibcKeeper "github.com/cosmos/ibc-go/v10/modules/core/keeper"
+
 	"github.com/arterynetwork/artr/util"
 	"github.com/arterynetwork/artr/x/bank"
 	"github.com/arterynetwork/artr/x/delegating"
@@ -88,6 +96,8 @@ var (
 		voting.AppModuleBasic{},
 		noding.AppModuleBasic{},
 		earning.AppModuleBasic{},
+		ibc.AppModuleBasic{},
+		ibcTransfer.AppModuleBasic{},
 	)
 
 	// module account permissions
@@ -123,6 +133,11 @@ type ArteryApp struct {
 	nodingKeeper     noding.Keeper
 	earningKeeper    earning.Keeper
 
+	// Кеепер ядра IBC держится указателем: маршрутизатор портов
+	// проставляется ему уже после создания.
+	ibcKeeper      *ibcKeeper.Keeper
+	transferKeeper ibcTransferKeeper.Keeper
+
 	// Module Manager
 	mm *module.Manager
 
@@ -151,7 +166,8 @@ func NewArteryApp(
 		earning.StoreKey,
 		// SDK 0.47 вынес параметры консенсуса в отдельный модуль x/consensus
 		// со своим стором.
-		consensusTypes.StoreKey)
+		consensusTypes.StoreKey,
+		ibcExported.StoreKey, ibcTransferTypes.StoreKey)
 
 	//TODO: pass `ec.Marshaller` to all modules properly and use it properly in
 
@@ -203,6 +219,9 @@ func NewArteryApp(
 			earningTypes.VpnCollectorName:     {},
 			earningTypes.StorageCollectorName: {},
 			earningTypes.ModuleName:           {},
+			// Модуль переводов IBC чеканит воучеры на входящие средства и
+			// сжигает их на обратном пути.
+			ibcTransferTypes.ModuleName: {authTypes.Minter, authTypes.Burner},
 		},
 		// SDK 0.50 добавил кодек адресов: разбор bech32 вынесен из глобального
 		// конфига в явную зависимость.
@@ -328,6 +347,40 @@ func NewArteryApp(
 	app.referralKeeper.AddHook(referral.StakeChangedCallback, app.nodingKeeper.OnStakeChanged)
 	app.referralKeeper.AddHook(referral.BanishedCallback, app.delegatingKeeper.OnBanished)
 
+	// --- IBC ---
+	//
+	// Право менять параметры отдано модулю апгрейда: своего гова у Artery
+	// нет, а адрес модуля никому не принадлежит. Так же сделано у
+	// x/consensus.
+	ibcAuthority := authTypes.NewModuleAddress(upgradeTypes.ModuleName).String()
+
+	app.ibcKeeper = ibcKeeper.NewKeeper(
+		ec.Marshaler,
+		runtime.NewKVStoreService(keys[ibcExported.StoreKey]),
+		noLegacyParams{},
+		app.upgradeKeeper,
+		ibcAuthority,
+	)
+
+	// ICS4Wrapper и ChannelKeeper — оба ChannelKeeper ядра: промежуточных
+	// слоёв (посредников вроде callbacks или fee) у нас нет.
+	app.transferKeeper = ibcTransferKeeper.NewKeeper(
+		ec.Marshaler,
+		runtime.NewKVStoreService(keys[ibcTransferTypes.StoreKey]),
+		noLegacyParams{},
+		app.ibcKeeper.ChannelKeeper,
+		app.ibcKeeper.ChannelKeeper,
+		app.MsgServiceRouter(),
+		app.accountKeeper,
+		bankAdapter{k: app.bankKeeper},
+		ibcAuthority,
+	)
+
+	// Маршрутизатор портов: пока единственный путь — переводы.
+	ibcRouter := ibcPortTypes.NewRouter()
+	ibcRouter.AddRoute(ibcTransferTypes.ModuleName, ibcTransfer.NewIBCModule(app.transferKeeper))
+	app.ibcKeeper.SetRouter(ibcRouter)
+
 	// Исторические обработчики апгрейдов (2.0.1 ... 2.5.8) удалены намеренно.
 	//
 	// Переход на новую версию SDK делается способом, который команда уже
@@ -357,6 +410,8 @@ func NewArteryApp(
 			app.nodingKeeper, *app.referralKeeper, app.accountKeeper, app.bankKeeper,
 		),
 		earning.NewAppModule(app.earningKeeper, app.bankKeeper, app.scheduleKeeper),
+		ibc.NewAppModule(app.ibcKeeper),
+		ibcTransfer.NewAppModule(app.transferKeeper),
 		voting.NewAppModule(
 			app.votingKeeper, app.scheduleKeeper, app.upgradeKeeper, app.nodingKeeper, app.delegatingKeeper,
 			*app.referralKeeper, app.profileKeeper, app.earningKeeper,
@@ -388,6 +443,8 @@ func NewArteryApp(
 		profileTypes.ModuleName,
 		votingTypes.ModuleName,
 		earning.ModuleName,
+		ibcExported.ModuleName,
+		ibcTransferTypes.ModuleName,
 	)
 	// Непустой EndBlock только у noding — он и остаётся первым.
 	app.mm.SetOrderEndBlockers(
@@ -401,6 +458,8 @@ func NewArteryApp(
 		profileTypes.ModuleName,
 		votingTypes.ModuleName,
 		earning.ModuleName,
+		ibcExported.ModuleName,
+		ibcTransferTypes.ModuleName,
 	)
 
 	// Sets the order of Genesis - Order matters, genutil is to always come last
@@ -420,6 +479,9 @@ func NewArteryApp(
 		votingTypes.ModuleName,
 		earning.ModuleName,
 		upgradeTypes.ModuleName,
+		// IBC последними: их InitGenesis ни от чего в Artery не зависит.
+		ibcExported.ModuleName,
+		ibcTransferTypes.ModuleName,
 	)
 
 	// Маршрутизация сообщений и запросов — только через сервисы:

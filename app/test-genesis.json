@@ -361,19 +361,43 @@
         "accrue_percentage_table": [
           {
             "start": "0",
-            "percent_list": ["21%", "0%", "1%", "0%", "0%"]
+            "percent_list": [
+              "21%",
+              "0%",
+              "1%",
+              "0%",
+              "0%"
+            ]
           },
           {
             "start": "1000000000",
-            "percent_list": ["24%", "0%", "1%", "0%", "0%"]
+            "percent_list": [
+              "24%",
+              "0%",
+              "1%",
+              "0%",
+              "0%"
+            ]
           },
           {
             "start": "10000000000",
-            "percent_list": ["27%", "0%", "1%", "0%", "0%"]
+            "percent_list": [
+              "27%",
+              "0%",
+              "1%",
+              "0%",
+              "0%"
+            ]
           },
           {
             "start": "100000000000",
-            "percent_list": ["30%", "0%", "1%", "0%", "0%"]
+            "percent_list": [
+              "30%",
+              "0%",
+              "1%",
+              "0%",
+              "0%"
+            ]
           }
         ]
       }
@@ -405,11 +429,11 @@
         "voting_power": {
           "slices": [
             {
-              "part":         "15%",
+              "part": "15%",
               "voting_power": 15
             },
             {
-              "part":         "85%",
+              "part": "85%",
               "voting_power": 10
             }
           ],
@@ -714,7 +738,6 @@
           "handler_name": "profile/refresh",
           "time": "2022-01-04T03:00:00Z"
         }
-
       ]
     },
     "voting": {
@@ -727,6 +750,57 @@
         "voting_period": 18,
         "poll_period": 18
       }
+    },
+    "ibc": {
+      "client_genesis": {
+        "clients": [],
+        "clients_consensus": [],
+        "clients_metadata": [],
+        "params": {
+          "allowed_clients": [
+            "*"
+          ]
+        },
+        "create_localhost": false,
+        "next_client_sequence": "0"
+      },
+      "connection_genesis": {
+        "connections": [],
+        "client_connection_paths": [],
+        "next_connection_sequence": "0",
+        "params": {
+          "max_expected_time_per_block": "30000000000"
+        }
+      },
+      "channel_genesis": {
+        "channels": [],
+        "acknowledgements": [],
+        "commitments": [],
+        "receipts": [],
+        "send_sequences": [],
+        "recv_sequences": [],
+        "ack_sequences": [],
+        "next_channel_sequence": "0"
+      },
+      "client_v2_genesis": {
+        "counterparty_infos": []
+      },
+      "channel_v2_genesis": {
+        "acknowledgements": [],
+        "commitments": [],
+        "receipts": [],
+        "async_packets": [],
+        "send_sequences": []
+      }
+    },
+    "transfer": {
+      "port_id": "transfer",
+      "denoms": [],
+      "params": {
+        "send_enabled": true,
+        "receive_enabled": true
+      },
+      "total_escrowed": []
     }
   },
   "chain_id": "4utests",
