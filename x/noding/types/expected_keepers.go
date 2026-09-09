@@ -30,5 +30,6 @@ type BankKeeper interface {
 	GetParams(ctx sdk.Context) bank.Params
 	GetBalance(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins
 	SendCoinsFromModuleToAccount(ctx sdk.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error
+	SendCoinsFromAccountToModule(ctx sdk.Context, senderAddr sdk.AccAddress, recipientModule string, amt sdk.Coins) error
 	BurnAccCoins(ctx sdk.Context, acc sdk.AccAddress, amt sdk.Coins) error
 }

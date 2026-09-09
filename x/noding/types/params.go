@@ -25,6 +25,16 @@ const (
 	DefaultMinTotalStake     = 50_000_000000
 )
 
+// DefaultMisbehaviourPenalty — доля собственной делегации, изымаемая за
+// византийское поведение.
+//
+// Пять процентов взяты как в Cosmos за двойную подпись. Величину стоит
+// пересмотреть: у Artery нарушитель и так получает пожизненный бан, а
+// порог собственной делегации в мейннете 50 000 ARTR — пять процентов от
+// него выходят скорее знаком, чем сдерживателем. Значение вынесено в
+// параметры и меняется голосованием.
+var DefaultMisbehaviourPenalty = util.Percent(5)
+
 // Parameter store keys
 var (
 	DefaultMinCriteria = MinCriteria{
@@ -46,13 +56,14 @@ var (
 		LuckiesVotingPower: 10,
 	}
 
-	KeyMaxValidators     = []byte("MaxValidators")
-	KeyJailAfter         = []byte("JailAfter")
-	KeyUnjailAfter       = []byte("UnjailAfter")
-	KeyLotteryValidators = []byte("LotteryValidators")
-	KeyMinStatus         = []byte("MinStatus")
-	KeyMinCriteria       = []byte("MinCriteria")
-	KeyVotingPower       = []byte("VotingPower")
+	KeyMaxValidators       = []byte("MaxValidators")
+	KeyJailAfter           = []byte("JailAfter")
+	KeyUnjailAfter         = []byte("UnjailAfter")
+	KeyLotteryValidators   = []byte("LotteryValidators")
+	KeyMinStatus           = []byte("MinStatus")
+	KeyMinCriteria         = []byte("MinCriteria")
+	KeyVotingPower         = []byte("VotingPower")
+	KeyMisbehaviourPenalty = []byte("MisbehaviourPenalty")
 )
 
 // ParamKeyTable for noding module
@@ -61,13 +72,17 @@ func ParamKeyTable() params.KeyTable {
 }
 
 // NewParams creates a new Params object
-func NewParams(maxValidators, jailAfter, unjailAfter, lotteryValidators uint32, minCriteria MinCriteria) Params {
+func NewParams(
+	maxValidators, jailAfter, unjailAfter, lotteryValidators uint32,
+	minCriteria MinCriteria, misbehaviourPenalty util.Fraction,
+) Params {
 	return Params{
-		MaxValidators:     maxValidators,
-		JailAfter:         jailAfter,
-		UnjailAfter:       unjailAfter,
-		LotteryValidators: lotteryValidators,
-		MinCriteria:       minCriteria,
+		MaxValidators:       maxValidators,
+		JailAfter:           jailAfter,
+		UnjailAfter:         unjailAfter,
+		LotteryValidators:   lotteryValidators,
+		MinCriteria:         minCriteria,
+		MisbehaviourPenalty: misbehaviourPenalty,
 	}
 }
 
@@ -89,6 +104,7 @@ func (p *Params) ParamSetPairs() params.ParamSetPairs {
 		params.NewParamSetPair(KeyLotteryValidators, &p.LotteryValidators, validateAdditionalValidators),
 		params.NewParamSetPair(KeyMinCriteria, &p.MinCriteria, validateMinCriteria),
 		params.NewParamSetPair(KeyVotingPower, &p.VotingPower, validateVotingPower),
+		params.NewParamSetPair(KeyMisbehaviourPenalty, &p.MisbehaviourPenalty, validateMisbehaviourPenalty),
 	}
 }
 
@@ -100,6 +116,7 @@ func DefaultParams() Params {
 		DefaultUnjailAfter,
 		DefaultLotteryValidators,
 		DefaultMinCriteria,
+		DefaultMisbehaviourPenalty,
 	)
 }
 
@@ -195,6 +212,29 @@ func (p *Params) Validate() error {
 	}
 	if err := validateVotingPower(p.VotingPower); err != nil {
 		return err
+	}
+	if err := validateMisbehaviourPenalty(p.MisbehaviourPenalty); err != nil {
+		return errorsmod.Wrap(err, "invalid MisbehaviourPenalty")
+	}
+	return nil
+}
+
+// validateMisbehaviourPenalty — доля в границах от нуля до единицы
+// включительно.
+//
+// Ноль допустим: это нынешнее поведение сети, где за византийское
+// поведение не берут ничего. Единица тоже: изъять всю собственную
+// делегацию — крайняя, но осмысленная мера.
+func validateMisbehaviourPenalty(value interface{}) error {
+	x, ok := value.(util.Fraction)
+	if !ok {
+		return fmt.Errorf("invalid misbehaviour_penalty type: %T", value)
+	}
+	if x.IsNullValue() {
+		return fmt.Errorf("misbehaviour_penalty is not set")
+	}
+	if x.IsNegative() || x.GT(util.FractionInt(1)) {
+		return fmt.Errorf("misbehaviour_penalty must be in [0; 1]: %s", x.String())
 	}
 	return nil
 }

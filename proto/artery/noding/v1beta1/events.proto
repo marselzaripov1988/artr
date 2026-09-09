@@ -2,6 +2,7 @@ syntax="proto3";
 package artery.noding.v1beta1;
 
 import "gogoproto/gogo.proto";
+import "cosmos/base/v1beta1/coin.proto";
 import "tendermint/abci/types.proto";
 import "artery/noding/v1beta1/types.proto";
 
@@ -20,4 +21,8 @@ message EventByzantine {
   string address = 1;
   bool banned = 2;
   repeated tendermint.abci.Misbehavior evidences = 3 [(gogoproto.nullable) = false];
+
+  // Penalty - изъятая доля собственной делегации. Без неё снаружи не
+  // видно, что нарушитель поплатился, а не просто был отмечен.
+  repeated cosmos.base.v1beta1.Coin penalty = 4 [(gogoproto.nullable) = false];
 }

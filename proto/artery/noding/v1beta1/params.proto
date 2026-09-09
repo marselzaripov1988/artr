@@ -18,5 +18,18 @@ message Params {
   uint32 unjail_after = 3;
   uint32 lottery_validators = 4;
   MinCriteria min_criteria = 7 [(gogoproto.nullable) = false];
+
+  // MisbehaviourPenalty - доля собственной делегации валидатора, изымаемая
+  // за византийское поведение. Изъятое уходит на счёт модуля, а не
+  // сжигается: предложение монет не меняется, меняется владелец.
+  //
+  // Берётся только собственная делегация нарушителя. Средства прочих
+  // участников трогать нельзя: в Artery не делегируют конкретному
+  // валидатору, и люди в его реферальном дереве к его честности
+  // отношения не имеют.
+  string misbehaviour_penalty = 8 [
+    (gogoproto.nullable)   = false,
+    (gogoproto.customtype) = "github.com/arterynetwork/artr/util.Fraction"
+  ];
   Distribution voting_power = 6 [(gogoproto.nullable) = false];
 }

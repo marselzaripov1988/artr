@@ -692,11 +692,23 @@ func (k Keeper) MarkTick(ctx sdk.Context, acc sdk.AccAddress) error {
 }
 
 func (k Keeper) MarkByzantine(ctx sdk.Context, acc sdk.AccAddress, evidence abci.Misbehavior) error {
+	// Изымаем сразу, на первом же нарушении, а не при бане на втором:
+	// двойная подпись не бывает случайной, и ждать повторения незачем.
+	penalty, err := k.confiscate(ctx, acc)
+	if err != nil {
+		// Не роняем блок из-за неудачного изъятия: нарушение всё равно
+		// должно быть записано, иначе валидатор останется безнаказанным
+		// вовсе. Ошибку видно в журнале.
+		k.Logger(ctx).Error("cannot confiscate misbehaviour penalty",
+			"address", acc.String(), "error", err)
+	}
+
 	return k.update(ctx, acc, func(d *types.Info) (save bool) {
 		d.Infractions = append(d.Infractions, evidence)
 		event := types.EventByzantine{
 			Address:   acc.String(),
 			Evidences: d.Infractions,
+			Penalty:   penalty,
 		}
 		if len(d.Infractions) > 1 {
 			d.BannedForLife = true
@@ -1069,4 +1081,44 @@ func (k Keeper) getFromIndex(ctx sdk.Context, key []byte) (value []byte, found b
 		return nil, false
 	}
 	return store.Get(key), true
+}
+
+// confiscate изымает у нарушителя долю его собственной делегации и
+// переводит её на счёт модуля.
+//
+// Переводит, а не сжигает: предложение монет не меняется, меняется
+// владелец. Распорядиться изъятым может управляющий орган сети.
+//
+// Берётся только собственная делегация нарушителя. Средства прочих
+// участников недоступны и по замыслу: в Artery не делегируют конкретному
+// валидатору, total_stake считается по реферальному дереву, и люди в нём
+// к честности этого валидатора отношения не имеют. Наказывать их за
+// чужое нарушение было бы и несправедливо, и бессмысленно —
+// сдерживателем для валидатора это не работает.
+func (k Keeper) confiscate(ctx sdk.Context, acc sdk.AccAddress) ([]sdk.Coin, error) {
+	share := k.GetParams(ctx).MisbehaviourPenalty
+	// Незаполненное значение — не то же, что ноль: у Fraction это
+	// отдельное состояние с пустым числителем, и обращение к нему
+	// панику даёт. В генезисах, созданных до появления параметра, поля
+	// нет вовсе — там незаполненное и означает прежнее поведение сети,
+	// когда за византийское поведение не брали ничего.
+	if share.IsNullValue() || share.IsZero() {
+		return nil, nil
+	}
+
+	stake := k.bankKeeper.GetBalance(ctx, acc).AmountOf(util.ConfigDelegatedDenom)
+	if !stake.IsPositive() {
+		return nil, nil
+	}
+
+	amount := share.MulInt64(stake.Int64()).Int64()
+	if amount <= 0 {
+		return nil, nil
+	}
+
+	penalty := sdk.NewCoins(sdk.NewInt64Coin(util.ConfigDelegatedDenom, amount))
+	if err := k.bankKeeper.SendCoinsFromAccountToModule(ctx, acc, types.ModuleName, penalty); err != nil {
+		return nil, err
+	}
+	return penalty, nil
 }

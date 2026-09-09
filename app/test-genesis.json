@@ -438,7 +438,8 @@
             }
           ],
           "luckies_voting_power": 10
-        }
+        },
+        "misbehaviour_penalty": "5%"
       }
     },
     "profile": {
