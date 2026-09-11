@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -41,6 +42,7 @@ import (
 	authKeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	authTypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	bankTypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	consensusKeeper "github.com/cosmos/cosmos-sdk/x/consensus/keeper"
 	consensusTypes "github.com/cosmos/cosmos-sdk/x/consensus/types"
 
@@ -514,6 +516,11 @@ func NewArteryApp(
 	// светлого клиента и IBC не поднимается вовсе — см. staking_shim.go.
 	stakingTypes.RegisterQueryServer(app.GRPCQueryRouter(), stakingShim{})
 
+	// Ответы на общепринятые запросы к банку. Свой банк Artery обслуживает
+	// по своему пути, а кошельки, обозреватели и индексаторы спрашивают
+	// cosmos.bank.v1beta1.Query — см. bank_shim.go.
+	bankTypes.RegisterQueryServer(app.GRPCQueryRouter(), bankShim{k: app.bankKeeper})
+
 	// The initChainer handles translating the genesis.json file into initial state for the network
 	app.SetInitChainer(app.InitChainer)
 	app.SetBeginBlocker(app.BeginBlocker)
@@ -640,6 +647,17 @@ func (app *ArteryApp) RegisterAPIRoutes(server *api.Server, apiConfig config2.AP
 
 	// Register grpc-gateway routes for all modules.
 	ModuleBasics.RegisterGRPCGatewayRoutes(clientCtx, server.GRPCGatewayRouter)
+
+	// Шлюз REST для переходников. Регистрация сервиса в GRPCQueryRouter
+	// открывает путь только по gRPC; REST ходит через отдельный шлюз, и
+	// без этих двух строк /cosmos/bank/... и /cosmos/staking/... отвечают
+	// 501 при работающем gRPC. Именно так это и выглядело до сих пор.
+	if err := bankTypes.RegisterQueryHandlerClient(context.Background(), server.GRPCGatewayRouter, bankTypes.NewQueryClient(clientCtx)); err != nil {
+		panic(err)
+	}
+	if err := stakingTypes.RegisterQueryHandlerClient(context.Background(), server.GRPCGatewayRouter, stakingTypes.NewQueryClient(clientCtx)); err != nil {
+		panic(err)
+	}
 
 	if apiConfig.Swagger {
 		RegisterSwaggerAPI(server.Router)
