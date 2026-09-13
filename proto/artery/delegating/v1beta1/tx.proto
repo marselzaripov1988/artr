@@ -2,6 +2,7 @@ syntax = "proto3";
 package artery.delegating.v1beta1;
 
 import "gogoproto/gogo.proto";
+import "cosmos/msg/v1/msg.proto";
 
 option go_package = "github.com/arterynetwork/artr/x/delegating/types";
 
@@ -12,6 +13,7 @@ service Msg {
 }
 
 message MsgDelegate {
+  option (cosmos.msg.v1.signer) = "address";
   option (gogoproto.equal)           = false;
   option (gogoproto.goproto_getters) = false;
 
@@ -30,6 +32,7 @@ message MsgDelegate {
 message MsgDelegateResponse {}
 
 message MsgRevoke {
+  option (cosmos.msg.v1.signer) = "address";
   option (gogoproto.equal)           = false;
   option (gogoproto.goproto_getters) = false;
 
@@ -48,6 +51,7 @@ message MsgRevoke {
 message MsgRevokeResponse {}
 
 message MsgExpressRevoke {
+  option (cosmos.msg.v1.signer) = "address";
   option (gogoproto.equal)           = false;
   option (gogoproto.goproto_getters) = false;
 

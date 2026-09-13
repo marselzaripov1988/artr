@@ -3,6 +3,7 @@ package artery.bank.v1beta1;
 
 import "gogoproto/gogo.proto";
 import "cosmos/base/v1beta1/coin.proto";
+import "cosmos/msg/v1/msg.proto";
 
 option go_package = "github.com/arterynetwork/artr/x/bank/types";
 
@@ -17,6 +18,7 @@ service Msg {
 
 // MsgSend represents a message to send coins from one account to another.
 message MsgSend {
+  option (cosmos.msg.v1.signer) = "from_address";
   option (gogoproto.equal)           = false;
   option (gogoproto.goproto_getters) = false;
 
@@ -31,6 +33,7 @@ message MsgSendResponse {}
 
 // MsgBurn is a message to burn coins (only free, not delegated ones) on sender's account.
 message MsgBurn {
+  option (cosmos.msg.v1.signer) = "account";
   option (gogoproto.equal)           = false;
   option (gogoproto.goproto_getters) = false;
 

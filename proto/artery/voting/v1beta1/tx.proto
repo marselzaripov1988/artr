@@ -3,6 +3,7 @@ package artery.voting.v1beta1;
 
 import "gogoproto/gogo.proto";
 import "artery/voting/v1beta1/types.proto";
+import "cosmos/msg/v1/msg.proto";
 
 option go_package = "github.com/arterynetwork/artr/x/voting/types";
 
@@ -14,6 +15,7 @@ service Msg {
 }
 
 message MsgPropose {
+  option (cosmos.msg.v1.signer) = "proposal";
   // end_block should be left blank, it will be ignored anyway.
   Proposal proposal = 1 [
     (gogoproto.nullable) = false,
@@ -25,6 +27,7 @@ message MsgPropose {
 message MsgProposeResponse {}
 
 message MsgVote {
+  option (cosmos.msg.v1.signer) = "voter";
   option (gogoproto.goproto_getters) = false;
 
   string voter = 1 [
@@ -40,6 +43,7 @@ message MsgVote {
 message MsgVoteResponse {}
 
 message MsgStartPoll {
+  option (cosmos.msg.v1.signer) = "poll";
   Poll poll = 1 [
     (gogoproto.nullable) = false,
     (gogoproto.jsontag)  = "poll",
@@ -50,6 +54,7 @@ message MsgStartPoll {
 message MsgStartPollResponse {}
 
 message MsgAnswerPoll {
+  option (cosmos.msg.v1.signer) = "respondent";
   option (gogoproto.goproto_getters) = false;
 
   string respondent = 1 [

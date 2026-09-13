@@ -2,6 +2,7 @@ syntax = "proto3";
 package artery.noding.v1beta1;
 
 import "gogoproto/gogo.proto";
+import "cosmos/msg/v1/msg.proto";
 
 option go_package = "github.com/arterynetwork/artr/x/noding/types";
 
@@ -12,6 +13,7 @@ service Msg {
 }
 
 message MsgOn {
+  option (cosmos.msg.v1.signer) = "account";
   option (gogoproto.goproto_getters) = false;
 
   string account = 1 [
@@ -27,6 +29,7 @@ message MsgOn {
 message MsgOnResponse {}
 
 message MsgOff {
+  option (cosmos.msg.v1.signer) = "account";
   option (gogoproto.goproto_getters) = false;
 
   string account = 1 [
@@ -38,6 +41,7 @@ message MsgOff {
 message MsgOffResponse {}
 
 message MsgUnjail {
+  option (cosmos.msg.v1.signer) = "account";
   option (gogoproto.goproto_getters) = false;
 
   string account = 1 [

@@ -3,6 +3,7 @@ package artery.profile.v1beta1;
 
 import "gogoproto/gogo.proto";
 import "artery/profile/v1beta1/types.proto";
+import "cosmos/msg/v1/msg.proto";
 
 option go_package = "github.com/arterynetwork/artr/x/profile/types";
 
@@ -22,6 +23,7 @@ service Msg {
 }
 
 message MsgUpdateProfile {
+  option (cosmos.msg.v1.signer) = "address";
   option (gogoproto.equal)           = false;
   option (gogoproto.goproto_getters) = false;
 
@@ -59,6 +61,7 @@ message MsgUpdateProfile {
 message MsgUpdateProfileResponse {}
 
 message MsgCreateAccount {
+  option (cosmos.msg.v1.signer) = "creator";
   option (gogoproto.equal)           = false;
   option (gogoproto.goproto_getters) = false;
 
@@ -82,6 +85,7 @@ message MsgCreateAccount {
 message MsgCreateAccountResponse {}
 
 message MsgSetStorageCurrent {
+  option (cosmos.msg.v1.signer) = "sender";
   option (gogoproto.equal)           = false;
   option (gogoproto.goproto_getters) = false;
 
@@ -102,6 +106,7 @@ message MsgSetStorageCurrent {
 message MsgSetStorageCurrentResponse {}
 
 message MsgSetVpnCurrent {
+  option (cosmos.msg.v1.signer) = "sender";
   option (gogoproto.equal)           = false;
   option (gogoproto.goproto_getters) = false;
 
@@ -122,6 +127,7 @@ message MsgSetVpnCurrent {
 message MsgSetVpnCurrentResponse {}
 
 message MsgPayTariff {
+  option (cosmos.msg.v1.signer) = "address";
   option (gogoproto.equal)           = false;
   option (gogoproto.goproto_getters) = false;
 
@@ -137,6 +143,7 @@ message MsgPayTariff {
 message MsgPayTariffResponse {}
 
 message MsgBuyStorage {
+  option (cosmos.msg.v1.signer) = "address";
   option (gogoproto.equal)           = false;
   option (gogoproto.goproto_getters) = false;
 
@@ -153,6 +160,7 @@ message MsgBuyStorage {
 message MsgBuyStorageResponse {}
 
 message MsgGiveStorageUp {
+  option (cosmos.msg.v1.signer) = "address";
   option (gogoproto.equal)           = false;
   option (gogoproto.goproto_getters) = false;
 
@@ -170,6 +178,7 @@ message MsgGiveStorageUp {
 message MsgGiveStorageUpResponse {}
 
 message MsgBuyVpn {
+  option (cosmos.msg.v1.signer) = "address";
   option (gogoproto.equal)           = false;
   option (gogoproto.goproto_getters) = false;
 
@@ -186,6 +195,7 @@ message MsgBuyVpn {
 message MsgBuyVpnResponse {}
 
 message MsgBuyImExtraStorage {
+  option (cosmos.msg.v1.signer) = "address";
   option (gogoproto.equal)           = false;
   option (gogoproto.goproto_getters) = false;
 
@@ -202,6 +212,7 @@ message MsgBuyImExtraStorage {
 message MsgBuyImExtraStorageResponse {}
 
 message MsgGiveUpImExtra {
+  option (cosmos.msg.v1.signer) = "address";
   option (gogoproto.equal)           = false;
   option (gogoproto.goproto_getters) = false;
 
@@ -219,6 +230,7 @@ message MsgGiveUpImExtra {
 message MsgGiveUpImExtraResponse {}
 
 message MsgProlongImExtra {
+  option (cosmos.msg.v1.signer) = "address";
   option (gogoproto.equal)           = false;
   option (gogoproto.goproto_getters) = false;
 
@@ -231,6 +243,7 @@ message MsgProlongImExtra {
 message MsgProlongImExtraResponse {}
 
 message MsgSetRate {
+  option (cosmos.msg.v1.signer) = "sender";
   option (gogoproto.equal)           = false;
   option (gogoproto.goproto_getters) = false;
 

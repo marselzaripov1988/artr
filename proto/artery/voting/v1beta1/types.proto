@@ -7,10 +7,12 @@ import "artery/voting/v1beta1/proposals.proto";
 import "artery/voting/v1beta1/args.proto";
 import "artery/noding/v1beta1/types.proto";
 import "artery/referral/v1beta1/types.proto";
+import "cosmos/msg/v1/msg.proto";
 
 option go_package = "github.com/arterynetwork/artr/x/voting/types";
 
 message Proposal {
+  option (cosmos.msg.v1.signer) = "author";
   option (gogoproto.goproto_stringer) = false;
   option (gogoproto.goproto_getters)  = false;
   option (gogoproto.equal)            = true;
@@ -139,6 +141,7 @@ message Government {
 // Poll is like Proposal, but it's specified by plain text and has no automatic decision execution engine encoded in the
 // blockchain. Also, a wider range of people can vote for/against it.
 message Poll {
+  option (cosmos.msg.v1.signer) = "author";
   option (gogoproto.goproto_stringer) = false;
   option (gogoproto.goproto_getters)  = false;
   option (gogoproto.equal)            = true;

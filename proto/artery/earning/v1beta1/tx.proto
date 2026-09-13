@@ -4,6 +4,7 @@ package artery.earning.v1beta1;
 import "gogoproto/gogo.proto";
 import "google/protobuf/timestamp.proto";
 import "artery/earning/v1beta1/types.proto";
+import "cosmos/msg/v1/msg.proto";
 
 option go_package = "github.com/arterynetwork/artr/x/earning/types";
 
@@ -13,6 +14,7 @@ service Msg {
 }
 
 message MsgSet {
+  option (cosmos.msg.v1.signer) = "signer";
   option (gogoproto.equal)           = false;
   option (gogoproto.goproto_getters) = false;
 
@@ -26,6 +28,7 @@ message MsgSet {
 message MsgSetResponse {}
 
 message MsgSetMultiple {
+  option (cosmos.msg.v1.signer) = "signer";
   option (gogoproto.equal)           = false;
   option (gogoproto.goproto_getters) = false;
 
