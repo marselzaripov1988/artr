@@ -44,8 +44,31 @@ func NewEncodingConfig() EncodingConfig {
 	// Префикс валидатора совпадает с общим: у Artery нет отдельного
 	// пространства адресов валидаторов, ими ведает x/noding по адресам
 	// обычных счетов.
+	// Описания берутся из объединённого реестра, а не из HybridResolver.
+	//
+	// Разница в порядке сборки. HybridResolver строит дескриптор каждого
+	// файла в момент его регистрации, разрешая импорты по тому, что уже
+	// зарегистрировано, и подставляя заглушку на то, чего ещё нет.
+	// Регистрация идёт из init() сгенерированных файлов, а те внутри
+	// пакета исполняются по алфавиту имён: tx.pb.go раньше types.pb.go.
+	//
+	// Из-за этого artery.voting.v1beta1.Proposal, на который ссылается
+	// MsgPropose, оказывался заглушкой — без полей и без опций. Подписант
+	// у MsgPropose лежит именно там (Proposal.author), и x/tx его не
+	// находил: "no cosmos.msg.v1.signer option found for message
+	// artery.voting.v1beta1.Proposal". Голосование и запуск опроса не
+	// отправлялись, притом что остальные 26 сообщений проходили.
+	//
+	// MergedRegistry собирает все описания в один набор и разрешает
+	// перекрёстные ссылки целиком, порядок регистрации ему безразличен.
+	// Стоит это одного прохода по всем файлам при старте.
+	protoFiles, err := proto.MergedRegistry()
+	if err != nil {
+		panic(err)
+	}
+
 	ir, err := codecTypes.NewInterfaceRegistryWithOptions(codecTypes.InterfaceRegistryOptions{
-		ProtoFiles: proto.HybridResolver,
+		ProtoFiles: protoFiles,
 		SigningOptions: signing.Options{
 			AddressCodec:          addressCodec.NewBech32Codec(Bech32PrefixAccAddr),
 			ValidatorAddressCodec: addressCodec.NewBech32Codec(Bech32PrefixValAddr),

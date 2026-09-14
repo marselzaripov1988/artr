@@ -7,6 +7,8 @@ import "cosmos/msg/v1/msg.proto";
 option go_package = "github.com/arterynetwork/artr/x/delegating/types";
 
 service Msg {
+  option (cosmos.msg.v1.service) = true;
+
   rpc Delegate(MsgDelegate) returns (MsgDelegateResponse);
   rpc Revoke(MsgRevoke) returns (MsgRevokeResponse);
   rpc ExpressRevoke(MsgExpressRevoke) returns (MsgExpressRevokeResponse);

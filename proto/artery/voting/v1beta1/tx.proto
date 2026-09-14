@@ -8,6 +8,8 @@ import "cosmos/msg/v1/msg.proto";
 option go_package = "github.com/arterynetwork/artr/x/voting/types";
 
 service Msg {
+  option (cosmos.msg.v1.service) = true;
+
   rpc Propose(MsgPropose) returns (MsgProposeResponse);
   rpc Vote(MsgVote) returns (MsgVoteResponse);
   rpc StartPoll(MsgStartPoll) returns (MsgStartPollResponse);

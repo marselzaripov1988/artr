@@ -9,6 +9,8 @@ import "cosmos/msg/v1/msg.proto";
 option go_package = "github.com/arterynetwork/artr/x/earning/types";
 
 service Msg {
+  option (cosmos.msg.v1.service) = true;
+
   rpc Set(MsgSet) returns (MsgSetResponse);
   rpc SetMultiple(MsgSetMultiple) returns (MsgSetMultipleResponse);
 }

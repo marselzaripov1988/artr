@@ -8,6 +8,8 @@ import "cosmos/msg/v1/msg.proto";
 option go_package = "github.com/arterynetwork/artr/x/profile/types";
 
 service Msg {
+  option (cosmos.msg.v1.service) = true;
+
   rpc CreateAccount(MsgCreateAccount) returns (MsgCreateAccountResponse);
   rpc UpdateProfile(MsgUpdateProfile) returns (MsgUpdateProfileResponse);
   rpc SetStorageCurrent(MsgSetStorageCurrent) returns (MsgSetStorageCurrentResponse);
