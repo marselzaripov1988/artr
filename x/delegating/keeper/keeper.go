@@ -227,7 +227,7 @@ func (k Keeper) GetAccumulation(ctx sdk.Context, acc sdk.AccAddress) (*types.Acc
 	dayPart := util.NewFraction(ctx.BlockTime().Sub(periodStart).Nanoseconds(), k.scheduleKeeper.OneDay(ctx).Nanoseconds()).Reduce()
 
 	delegated, _ := k.getDelegated(ctx, acc)
-	isActiveProfile := k.profileKeeper.GetProfile(ctx, acc).IsActive(ctx)
+	isActiveProfile := k.isActiveProfile(ctx, acc)
 	isActiveValidator, err := k.nodingKeeper.IsActiveValidator(ctx, acc)
 	if err != nil {
 		panic(err)
@@ -462,7 +462,7 @@ func (k Keeper) accruePart(ctx sdk.Context, acc sdk.AccAddress, item *types.Reco
 			item.MissedPart = nil
 		}
 		delegated, _ := k.getDelegated(ctx, acc)
-		isActiveProfile := k.profileKeeper.GetProfile(ctx, acc).IsActive(ctx)
+		isActiveProfile := k.isActiveProfile(ctx, acc)
 		isActiveValidator, err := k.nodingKeeper.IsActiveValidator(ctx, acc)
 		if err != nil {
 			panic(err)
@@ -481,6 +481,27 @@ func (k Keeper) accruePart(ctx sdk.Context, acc sdk.AccAddress, item *types.Reco
 		k.scheduleKeeper.Delete(ctx, *item.NextAccrue, types.AccrueHookName, acc)
 	}
 	item.NextAccrue = &nextPayment
+}
+
+// isActiveProfile — активен ли профиль счёта.
+//
+// Отдельный метод, потому что писать это в три места нельзя: GetProfile
+// возвращает nil, когда записи нет, а IsActive объявлен со значимым
+// получателем — вызов на nil разыменовывает пустой указатель. Паника
+// уходит в x/schedule, тот её перехватывает и выбрасывает задачу, и
+// начисление для счёта умирает навсегда: денег нет, следующая задача не
+// заводится, а весь след — одна строка в журнале узла.
+//
+// В мейннете таких счетов нет: все 134 519 делегирующих имеют профиль,
+// потому что счета заводятся через MsgCreateAccount. Но счёт, заведённый
+// в обход — правкой генезиса, например, — сюда попадает. Именно на таком
+// начисление и умерло на тестнете.
+//
+// Отсутствие профиля означает «надбавки за него нет», а не «случилось
+// непоправимое».
+func (k Keeper) isActiveProfile(ctx sdk.Context, acc sdk.AccAddress) bool {
+	p := k.profileKeeper.GetProfile(ctx, acc)
+	return p != nil && p.IsActive(ctx)
 }
 
 func (k Keeper) percent(ctx sdk.Context, delegated math.Int, isActiveProfile bool, isActiveValidator bool, isActiveVpn bool, isActiveStorage bool) util.Fraction {

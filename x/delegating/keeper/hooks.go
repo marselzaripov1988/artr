@@ -77,7 +77,8 @@ func (k Keeper) MustPerformAccrue(ctx sdk.Context, payload []byte, time time.Tim
 	}
 
 	delegated, _ := k.getDelegated(ctx, acc)
-	isActiveProfile := k.profileKeeper.GetProfile(ctx, acc).IsActive(ctx)
+
+	isActiveProfile := k.isActiveProfile(ctx, acc)
 	isActiveValidator, err := k.nodingKeeper.IsActiveValidator(ctx, acc)
 	if err != nil {
 		panic(err)
