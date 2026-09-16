@@ -205,13 +205,20 @@ var xxx_messageInfo_AddressArgs proto.InternalMessageInfo
 type SoftwareUpgradeArgs struct {
 	// Name - upgrade name
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name" yaml:"name"`
-	// Height - block height to schedule the upgrade at
-	// DEPRECATED: Use Time instead
+	// Height - block height to schedule the upgrade at.
+	//
+	// This is the way to schedule an upgrade. It used to be marked
+	// deprecated in favour of Time; the SDK has since dropped time-based
+	// plans altogether, so the deprecation went the other way round.
 	Height int64 `protobuf:"varint,2,opt,name=height,proto3" json:"height,omitempty" yaml:"height,omitempty"`
 	// Info - a link (with a checksum) to a JSON file containing upgrade data (binary URIs and so on)
 	// Please refer to https://github.com/regen-network/cosmosd#auto-download
 	Info string `protobuf:"bytes,3,opt,name=info,proto3" json:"info" yaml:"info"`
-	// Time the upgrade is scheduled at
+	// Time the upgrade is scheduled at.
+	//
+	// DEPRECATED: use Height. Kept because proposals from the 2.x era carry
+	// it and the network's own voting history must stay readable; new
+	// proposals are rejected if it is set.
 	Time *time.Time `protobuf:"bytes,4,opt,name=time,proto3,stdtime" json:"time,omitempty" yaml:"time,omitempty"`
 }
 

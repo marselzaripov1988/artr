@@ -254,12 +254,17 @@ func (k Keeper) EndProposal(ctx sdk.Context, proposal types.Proposal, agreed boo
 			k.profileKeeper.RemoveFreeCreator(ctx, proposal.GetAddress().GetAddress())
 		case types.PROPOSAL_TYPE_SOFTWARE_UPGRADE:
 			p := proposal.GetSoftwareUpgrade()
+			// План назначается высотой. Время в него не переносится
+			// вовсе: Plan.ValidateBasic с SDK 0.47 отвергает непустое
+			// Time, и заявка упала бы уже после голосования.
+			//
+			// Старые заявки со временем в истории остаются — их
+			// пропускает ValidateHistorical, — но исполнять сегодня
+			// можно только высоту.
 			plan := upgrade.Plan{
-				Name: p.Name,
-				Info: p.Info,
-			}
-			if p.Time != nil {
-				plan.Time = *p.Time
+				Name:   p.Name,
+				Info:   p.Info,
+				Height: p.Height,
 			}
 			err = k.upgradeKeeper.ScheduleUpgrade(ctx, plan)
 		case types.PROPOSAL_TYPE_CANCEL_SOFTWARE_UPGRADE:

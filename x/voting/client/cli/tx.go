@@ -5,9 +5,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"time"
 
-	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
@@ -393,10 +391,16 @@ func cmdRemoveFreeCreator() *cobra.Command {
 // GetCmdUpgradeSoftware is the CLI command for creating software upgrade proposal
 func cmdUpgradeSoftware() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "upgrade-software <upgrade name> <time> <JSON URI with checksum> <proposal name> <author key or address>",
+		Use:     "upgrade-software <upgrade name> <height> <JSON URI with checksum> <proposal name> <author key or address>",
 		Aliases: []string{"upgrade_software", "upgrade", "us"},
 		Short:   "Propose to upgrade the blockchain software",
-		Example: `artrcli tx voting upgrade-software 3.0.0 2023-01-01T03:00:00Z https://example.com/updates/3.0.0/info.json?checksum=sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 "update to v3 Jan 1st at 03:00 AM GMT" ivan`,
+		Long: `Propose to upgrade the blockchain software at a given block height.
+
+The upgrade used to be scheduled by time; the SDK has since dropped
+time-based plans, and a proposal carrying a time would pass the vote and
+then fail to execute. Height is also the better choice for a coordinated
+halt: every node stops at the same block, so every state export matches.`,
+		Example: `artrd tx voting upgrade-software 3.0.0 6100000 https://example.com/updates/3.0.0/info.json?checksum=sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 "update to v3 at height 6100000" ivan`,
 		Args:    cobra.ExactArgs(5),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := cmd.Flags().Set(flags.FlagFrom, args[4]); err != nil {
@@ -412,11 +416,9 @@ func cmdUpgradeSoftware() *cobra.Command {
 
 			upgradeName := args[0]
 
-			var t time.Time
-			if stamp, err := runtime.Timestamp(fmt.Sprintf(`"%s"`, args[1])); err != nil {
-				return errors.Wrap(err, "cannot parse time")
-			} else {
-				t = stamp.AsTime()
+			height, err := strconv.ParseInt(args[1], 10, 64)
+			if err != nil {
+				return errors.Wrap(err, "cannot parse height")
 			}
 
 			info := args[2]
@@ -428,9 +430,9 @@ func cmdUpgradeSoftware() *cobra.Command {
 					Type:   types.PROPOSAL_TYPE_SOFTWARE_UPGRADE,
 					Args: &types.Proposal_SoftwareUpgrade{
 						SoftwareUpgrade: &types.SoftwareUpgradeArgs{
-							Name: upgradeName,
-							Time: &t,
-							Info: info,
+							Name:   upgradeName,
+							Height: height,
+							Info:   info,
 						},
 					},
 				},

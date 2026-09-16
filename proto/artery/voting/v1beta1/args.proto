@@ -60,8 +60,11 @@ message SoftwareUpgradeArgs {
     (gogoproto.jsontag)  = "name",
     (gogoproto.moretags) = "yaml:\"name\""
   ];
-  // Height - block height to schedule the upgrade at
-  // DEPRECATED: Use Time instead
+  // Height - block height to schedule the upgrade at.
+  //
+  // This is the way to schedule an upgrade. It used to be marked
+  // deprecated in favour of Time; the SDK has since dropped time-based
+  // plans altogether, so the deprecation went the other way round.
   int64 height = 2 [
     (gogoproto.jsontag)  = "height,omitempty",
     (gogoproto.moretags) = "yaml:\"height,omitempty\""
@@ -72,7 +75,11 @@ message SoftwareUpgradeArgs {
     (gogoproto.jsontag)  = "info",
     (gogoproto.moretags) = "yaml:\"info\""
   ];
-  // Time the upgrade is scheduled at
+  // Time the upgrade is scheduled at.
+  //
+  // DEPRECATED: use Height. Kept because proposals from the 2.x era carry
+  // it and the network's own voting history must stay readable; new
+  // proposals are rejected if it is set.
   google.protobuf.Timestamp time = 4 [
     (gogoproto.stdtime)  = true,
     (gogoproto.nullable) = true,
