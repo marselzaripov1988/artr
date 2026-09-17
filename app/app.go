@@ -454,6 +454,17 @@ func NewArteryApp(
 	// Дополнение списков поведения не меняет: непустой BeginBlock есть только
 	// у noding и schedule (и у upgrade из SDK), и все трое стояли в списке
 	// раньше — их взаимный порядок сохранён. У остальных тела пустые.
+	// Этап перед блоком. Ради x/upgrade он и нужен: там проверяется, не
+	// пора ли встать по назначенному плану.
+	//
+	// x/auth перечислен не для порядка: у него этот этап тоже есть, а
+	// manager требует назвать все модули, у которых он объявлен, и
+	// падает с «all modules must be defined», если забыть хоть один.
+	app.mm.SetOrderPreBlockers(
+		upgradeTypes.ModuleName,
+		authTypes.ModuleName,
+	)
+
 	app.mm.SetOrderBeginBlockers(
 		upgradeTypes.ModuleName,
 		noding.ModuleName,
@@ -523,6 +534,9 @@ func NewArteryApp(
 
 	// The initChainer handles translating the genesis.json file into initial state for the network
 	app.SetInitChainer(app.InitChainer)
+	// Этап перед блоком: без него x/upgrade не останавливает сеть по
+	// назначенному плану — см. PreBlocker.
+	app.SetPreBlocker(app.PreBlocker)
 	app.SetBeginBlocker(app.BeginBlocker)
 	app.SetEndBlocker(app.EndBlocker)
 
@@ -597,6 +611,23 @@ func (app *ArteryApp) InitChainer(ctx sdk.Context, req *abci.RequestInitChain) (
 	}
 
 	return app.mm.InitGenesis(ctx, app.ec.Marshaler, genesisState)
+}
+
+// PreBlocker — этап перед началом блока.
+//
+// Появился в SDK 0.50 и нужен ровно одному модулю: x/upgrade. Именно
+// здесь он смотрит, не пора ли встать по назначенному плану, и
+// останавливает узел, если обработчика для обновления нет.
+//
+// Без этого вызова план лежит в состоянии, и его никто не читает.
+// Наружу это выглядит хуже отказа: голосование прошло, план назначен,
+// высота остановки наступила — и сеть спокойно идёт дальше. Проверить
+// это можно было только настоящей репетицией, на ней и нашлось.
+//
+// Перечислять модули в SetOrderPreBlockers ниже надо все, у которых
+// PreBlock есть: manager проверяет, что ни один не забыт.
+func (app *ArteryApp) PreBlocker(ctx sdk.Context, _ *abci.RequestFinalizeBlock) (*sdk.ResponsePreBlock, error) {
+	return app.mm.PreBlock(ctx)
 }
 
 // BeginBlocker application updates every begin block
