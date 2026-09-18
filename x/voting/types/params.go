@@ -7,15 +7,26 @@ import (
 	"github.com/pkg/errors"
 
 	params "github.com/cosmos/cosmos-sdk/x/params/types"
-
-	"github.com/arterynetwork/artr/util"
 )
 
 // Default parameter namespace
 const (
 	DefaultParamspace = ModuleName
 
-	DefaultVotingPeriod int32 = util.BlocksOneDay
+	// DefaultVotingPeriod — срок голосования по умолчанию, в ЧАСАХ.
+	//
+	// Единица измерения — часы, а не блоки: Keeper.Propose считает конец
+	// голосования как VotingPeriod * time.Hour, и validateVotingPeriod
+	// говорит о том же ("at least 1 hour").
+	//
+	// Здесь стояло util.BlocksOneDay — число блоков (2880), подставленное
+	// в поле часов. Замысел читается: 2880 блоков по 30 секунд и есть
+	// сутки. Но в часах сутки — это 24, а 2880 часов дают 120 дней.
+	//
+	// Мейннет от этого не пострадал: у него значение лежит в состоянии и
+	// равно 24. Умолчание срабатывает только там, где параметров в
+	// генезисе нет вовсе — на новых сетях и стендах.
+	DefaultVotingPeriod int32 = 24
 )
 
 // Parameter store keys
