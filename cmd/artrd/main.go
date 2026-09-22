@@ -164,9 +164,10 @@ func queryCmd() *cobra.Command {
 	}
 
 	queryCmd.AddCommand(
-		// authcmd.GetAccountCmd из SDK 0.50 убран: запрос счёта переведён
-		// на autocli, который здесь не подключён. Команда query account
-		// временно недоступна — счёт читается через REST или gRPC.
+		// authcmd.GetAccountCmd из SDK 0.50 убран вместе с переводом
+		// запроса счёта на autocli, который здесь не подключён. Своя
+		// команда — в account.go.
+		cmdQueryAccount(),
 		flags.LineBreak,
 		// Своя tendermint-validator-set держалась на rpc.GetValidators,
 		// которого в 0.50 нет. Штатная команда делает то же самое.
