@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
@@ -56,6 +57,10 @@ import (
 	ibcPortTypes "github.com/cosmos/ibc-go/v10/modules/core/05-port/types"
 	ibcExported "github.com/cosmos/ibc-go/v10/modules/core/exported"
 	ibcKeeper "github.com/cosmos/ibc-go/v10/modules/core/keeper"
+
+	wasm "github.com/CosmWasm/wasmd/x/wasm"
+	wasmKeeper "github.com/CosmWasm/wasmd/x/wasm/keeper"
+	wasmTypes "github.com/CosmWasm/wasmd/x/wasm/types"
 	ibcTm "github.com/cosmos/ibc-go/v10/modules/light-clients/07-tendermint"
 
 	"github.com/arterynetwork/artr/util"
@@ -103,6 +108,7 @@ var (
 		earning.AppModuleBasic{},
 		ibc.AppModuleBasic{},
 		ibcTransfer.AppModuleBasic{},
+		wasm.AppModuleBasic{},
 	)
 
 	// module account permissions
@@ -113,6 +119,7 @@ var (
 		earning.ModuleName:              nil,
 		earning.VpnCollectorName:        nil,
 		earning.StorageCollectorName:    nil,
+		wasmTypes.ModuleName:            {authTypes.Burner},
 	}
 )
 
@@ -143,6 +150,9 @@ type ArteryApp struct {
 	ibcKeeper      *ibcKeeper.Keeper
 	transferKeeper ibcTransferKeeper.Keeper
 
+	// Проба CosmWasm.
+	wasmKeeper wasmKeeper.Keeper
+
 	// Module Manager
 	mm *module.Manager
 
@@ -172,7 +182,8 @@ func NewArteryApp(
 		// SDK 0.47 вынес параметры консенсуса в отдельный модуль x/consensus
 		// со своим стором.
 		consensusTypes.StoreKey,
-		ibcExported.StoreKey, ibcTransferTypes.StoreKey)
+		ibcExported.StoreKey, ibcTransferTypes.StoreKey,
+		wasmTypes.StoreKey)
 
 	//TODO: pass `ec.Marshaller` to all modules properly and use it properly in
 
@@ -394,6 +405,39 @@ func NewArteryApp(
 	ibcRouter.AddRoute(ibcTransferTypes.ModuleName, ibcTransfer.NewIBCModule(app.transferKeeper))
 	app.ibcKeeper.SetRouter(ibcRouter)
 
+	// --- CosmWasm (проба) ---
+	//
+	// Каталог для кэша скомпилированных контрактов берётся из окружения.
+	// Это временное решение пробы: NewArteryApp не принимает домашний
+	// путь вовсе, и для настоящей интеграции его придётся протащить
+	// через конструктор — иначе кэш ляжет мимо каталога узла.
+	homeDir := os.Getenv("ARTR_HOME")
+	if homeDir == "" {
+		homeDir = filepath.Join(os.Getenv("HOME"), ".artrd")
+	}
+
+	app.wasmKeeper = wasmKeeper.NewKeeper(
+		ec.Marshaler,
+		runtime.NewKVStoreService(keys[wasmTypes.StoreKey]),
+		app.accountKeeper,
+		wasmBank{bankAdapter{k: app.bankKeeper}},
+		wasmStaking{},
+		wasmDistr{},
+		app.ibcKeeper.ChannelKeeper,
+		app.ibcKeeper.ChannelKeeper,
+		app.transferKeeper,
+		app.MsgServiceRouter(),
+		app.GRPCQueryRouter(),
+		homeDir,
+		wasmTypes.DefaultNodeConfig(),
+		wasmTypes.VMConfig{},
+		wasmKeeper.BuiltInCapabilities(),
+		ibcAuthority,
+		// Исходящие переводы из контрактов идут через банк Artery,
+		// а не через cosmos.bank, которого в сети нет.
+		wasmKeeper.WithMessageEncoders(arteryBankEncoder()),
+	)
+
 	// Светлый клиент подключается отдельно: в ibc-go 10 клиенты вынесены в
 	// самостоятельные модули, и без регистрации маршрута цепочка не умеет
 	// разбирать даже тип ClientState — создание клиента падает на
@@ -435,6 +479,10 @@ func NewArteryApp(
 		ibc.NewAppModule(app.ibcKeeper),
 		ibcTransfer.NewAppModule(app.transferKeeper),
 		ibcTm.NewAppModule(tmLightClient),
+		wasm.NewAppModule(
+			ec.Marshaler, &app.wasmKeeper, wasmStaking{}, app.accountKeeper,
+			wasmBank{bankAdapter{k: app.bankKeeper}}, app.MsgServiceRouter(), noLegacyParams{},
+		),
 		voting.NewAppModule(
 			app.votingKeeper, app.scheduleKeeper, app.upgradeKeeper, app.nodingKeeper, app.delegatingKeeper,
 			*app.referralKeeper, app.profileKeeper, app.earningKeeper,
@@ -479,6 +527,7 @@ func NewArteryApp(
 		earning.ModuleName,
 		ibcExported.ModuleName,
 		ibcTransferTypes.ModuleName,
+		wasmTypes.ModuleName,
 	)
 	// Непустой EndBlock только у noding — он и остаётся первым.
 	app.mm.SetOrderEndBlockers(
@@ -494,6 +543,7 @@ func NewArteryApp(
 		earning.ModuleName,
 		ibcExported.ModuleName,
 		ibcTransferTypes.ModuleName,
+		wasmTypes.ModuleName,
 	)
 
 	// Sets the order of Genesis - Order matters, genutil is to always come last
@@ -516,6 +566,7 @@ func NewArteryApp(
 		// IBC последними: их InitGenesis ни от чего в Artery не зависит.
 		ibcExported.ModuleName,
 		ibcTransferTypes.ModuleName,
+		wasmTypes.ModuleName,
 	)
 
 	// Маршрутизация сообщений и запросов — только через сервисы:

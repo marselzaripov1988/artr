@@ -6,6 +6,8 @@ toolchain go1.24.0
 
 require (
 	cosmossdk.io/x/tx v0.14.0
+	github.com/CosmWasm/wasmd v0.60.8
+	github.com/CosmWasm/wasmvm/v2 v2.3.4
 	github.com/cometbft/cometbft v0.38.26
 	github.com/cosmos/cosmos-db v1.1.3
 	github.com/cosmos/cosmos-sdk v0.53.8
@@ -31,12 +33,15 @@ require (
 	cloud.google.com/go/monitoring v1.24.2 // indirect
 	cosmossdk.io/collections v1.3.1 // indirect
 	cosmossdk.io/schema v1.1.0 // indirect
+	cosmossdk.io/x/evidence v0.1.1 // indirect
+	cosmossdk.io/x/feegrant v0.1.1 // indirect
 	github.com/DataDog/datadog-go v4.8.3+incompatible // indirect
 	github.com/DataDog/zstd v1.5.7 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.29.0 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric v0.50.0 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/resourcemapping v0.50.0 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
+	github.com/bits-and-blooms/bitset v1.24.3 // indirect
 	github.com/bytedance/gopkg v0.1.3 // indirect
 	github.com/bytedance/sonic v1.15.1 // indirect
 	github.com/bytedance/sonic/loader v0.5.1 // indirect
@@ -49,6 +54,7 @@ require (
 	github.com/cometbft/cometbft-db v0.14.1 // indirect
 	github.com/cosmos/ics23/go v0.11.0 // indirect
 	github.com/dgraph-io/badger/v4 v4.2.0 // indirect
+	github.com/distribution/reference v0.5.0 // indirect
 	github.com/emicklei/dot v1.6.2 // indirect
 	github.com/envoyproxy/go-control-plane/envoy v1.32.4 // indirect
 	github.com/envoyproxy/protoc-gen-validate v1.2.1 // indirect
@@ -57,6 +63,7 @@ require (
 	github.com/go-jose/go-jose/v4 v4.1.1 // indirect
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
 	github.com/google/flatbuffers v24.3.25+incompatible // indirect
+	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/hashicorp/go-hclog v1.6.3 // indirect
 	github.com/hashicorp/go-metrics v0.5.4 // indirect
 	github.com/hashicorp/go-plugin v1.6.3 // indirect
@@ -69,7 +76,9 @@ require (
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/oasisprotocol/curve25519-voi v0.0.0-20230904125328-1f23a7beb09a // indirect
 	github.com/oklog/run v1.1.0 // indirect
+	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10 // indirect
+	github.com/shamaton/msgpack/v2 v2.2.0 // indirect
 	github.com/spiffe/go-spiffe/v2 v2.5.0 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/zeebo/errs v1.4.0 // indirect
@@ -83,6 +92,7 @@ require (
 	go.yaml.in/yaml/v2 v2.4.2 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/arch v0.17.0 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gotest.tools/v3 v3.5.2 // indirect
 	rsc.io/qr v0.2.0 // indirect
 )
@@ -118,7 +128,7 @@ require (
 	github.com/cosmos/cosmos-proto v1.0.0-beta.5 // indirect
 	github.com/cosmos/go-bip39 v1.0.0 // indirect
 	github.com/cosmos/gogogateway v1.2.0 // indirect
-	github.com/cosmos/iavl v1.2.2 // indirect
+	github.com/cosmos/iavl v1.2.4 // indirect
 	github.com/cosmos/ibc-go/v10 v10.7.0
 	github.com/cosmos/ledger-cosmos-go v1.0.0 // indirect
 	github.com/danieljoos/wincred v1.2.1 // indirect
@@ -220,7 +230,7 @@ require (
 	google.golang.org/api v0.247.0 // indirect
 	google.golang.org/genproto v0.0.0-20250603155806-513f23925822 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250818200422-3122310a409c // indirect
-	nhooyr.io/websocket v1.8.11 // indirect
+	nhooyr.io/websocket v1.8.17 // indirect
 	pgregory.net/rapid v1.2.0 // indirect
 	sigs.k8s.io/yaml v1.6.0 // indirect
 )
