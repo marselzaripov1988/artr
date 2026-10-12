@@ -2,7 +2,7 @@ module github.com/arterynetwork/artr
 
 go 1.23.8
 
-toolchain go1.24.0
+toolchain go1.24.13
 
 require (
 	cosmossdk.io/x/tx v0.14.0
