@@ -204,6 +204,8 @@ func (app ArteryApp) CheckExportImport(t *testing.T, time time.Time, storeKeys [
 	}
 	dir, _ := ioutil.TempDir("", "goleveldb-app-sim-2")
 	db, _ := dbm.NewGoLevelDB("Simulation-2", dir, nil)
+	// Второму экземпляру — свой каталог VM, см. NewAppFromGenesis.
+	_ = os.Setenv("ARTR_HOME", dir)
 
 	defer func() {
 		_ = db.Close()
