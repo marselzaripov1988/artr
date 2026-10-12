@@ -802,6 +802,18 @@
         "receive_enabled": true
       },
       "total_escrowed": []
+    },
+    "wasm": {
+      "params": {
+        "code_upload_access": {
+          "permission": "Everybody",
+          "addresses": []
+        },
+        "instantiate_default_permission": "Everybody"
+      },
+      "codes": [],
+      "contracts": [],
+      "sequences": []
     }
   },
   "chain_id": "4utests",
