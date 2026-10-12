@@ -1,0 +1,5 @@
+# Keep GitHub's language stats about the chain code, not bundled assets.
+client/docs/swagger-ui/** linguist-vendored
+client/docs/statik/statik.go linguist-generated
+*.pb.go linguist-generated
+*.pb.gw.go linguist-generated
