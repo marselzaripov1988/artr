@@ -75,6 +75,12 @@ func NewAppFromGenesis(genesis []byte) (app *ArteryApp, cleanup func(), ctx sdk.
 	dir, _ := ioutil.TempDir("", "goleveldb-app-sim")
 	db, _ := dbm.NewGoLevelDB("Simulation", dir, nil)
 
+	// VM CosmWasm держит в своём каталоге эксклюзивную блокировку, а
+	// каталог берётся из ARTR_HOME. С общим ~/.artrd второй экземпляр
+	// приложения в том же процессе падал при сборке, поэтому каждой
+	// тестовой сборке — свой.
+	_ = os.Setenv("ARTR_HOME", dir)
+
 	cleanup = func() {
 		_ = db.Close()
 		_ = os.RemoveAll(dir)
